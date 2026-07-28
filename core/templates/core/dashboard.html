@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - GC-FL</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; 
+        }
+        .module-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Barra de Navegación Superior -->
+    <nav class="bg-[#2a4365] text-white px-6 py-3 flex justify-between items-center shadow-md relative z-20">
+        
+        <div class="flex items-center space-x-2">
+            <i data-lucide="boxes" class="w-6 h-6"></i>
+            <span class="font-bold text-xl tracking-widest">GC-FL</span>
+        </div>
+
+        <div class="hidden md:flex flex-1 max-w-xl mx-4">
+            <div class="relative w-full">
+                <input 
+                    type="text" 
+                    placeholder="Buscar..." 
+                    class="w-full bg-white/10 border border-white/20 rounded-full py-2 px-4 text-white placeholder-white/60 focus:outline-none focus:bg-white/20 transition-colors"
+                >
+            </div>
+        </div>
+
+        <div class="relative">
+            <button 
+                onclick="toggleDropdown()" 
+                class="flex items-center space-x-2 hover:text-gray-200 focus:outline-none transition-colors"
+            >
+                <!-- Nombre de usuario dinamico -->
+                <span class="font-medium text-transform: uppercase">{{ user.username }}</span>
+                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </button>
+
+            <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-100">
+                <div class="px-4 py-2 text-xs text-gray-500 border-b border-gray-100">
+                    <!-- Mostramos los roles como un extra en el menú -->
+                    Roles: {{ roles|join:", " }}
+                </div>
+                <a href="#" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                    <i data-lucide="user" class="w-4 h-4 mr-2"></i> Mi Perfil
+                </a>
+                <!-- 2. Ruta real de logout (asumiendo que le pusiste name='logout' en users/urls.py) -->
+                <a href="{% url 'logout' %}" class="flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                    <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 p-8 max-w-7xl mx-auto w-full relative z-10">
+        
+        <div class="mb-8 border-b border-gray-300 pb-2">
+            <h1 class="text-2xl font-bold text-gray-800">Panel Principal</h1>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+
+            <!-- Logica Condicional por Módulo -->
+            <!-- Reemplazamos href="#" por la ruta de nuestro namespace 'clientes' -->
+            
+            {% if permissions.proveedores > 0 %}
+            <a href="{% url 'proveedores:proveedores_list' %}" class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
+                <i data-lucide="truck" class="w-10 h-10 text-green-500 mb-3 stroke-[1.5]"></i>
+                <h2 class="font-semibold text-gray-800">Proveedores</h2>
+                <p class="text-xs text-gray-400 mt-1">{% if permissions.proveedores == 1 %}Solo Lectura{% else %}Control Total{% endif %}</p>
+            </a>
+            {% endif %}
+
+            {% if permissions.compras > 0 %}
+            <a href="#" class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
+                <i data-lucide="shopping-cart" class="w-10 h-10 text-yellow-500 mb-3 stroke-[1.5]"></i>
+                <h2 class="font-semibold text-gray-800">Compras</h2>
+                <p class="text-xs text-gray-400 mt-1">{% if permissions.compras == 1 %}Solo Lectura{% else %}Control Total{% endif %}</p>
+            </a>
+            {% endif %}
+
+            {% if permissions.clientes > 0 %}
+            <a href="{% url 'clientes:clientes_list' %}" class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
+                <i data-lucide="users" class="w-10 h-10 text-blue-500 mb-3 stroke-[1.5]"></i>
+                <h2 class="font-semibold text-gray-800">Clientes</h2>
+                <p class="text-xs text-gray-400 mt-1">{% if permissions.clientes == 1 %}Solo Lectura{% else %}Control Total{% endif %}</p>
+            </a>
+            {% endif %}
+
+            {% if permissions.ventas > 0 %}
+            <a href="#" class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
+                <i data-lucide="trending-up" class="w-10 h-10 text-orange-500 mb-3 stroke-[1.5]"></i>
+                <h2 class="font-semibold text-gray-800">Ventas</h2>
+                <p class="text-xs text-gray-400 mt-1">{% if permissions.ventas == 1 %}Solo Lectura{% else %}Control Total{% endif %}</p>
+            </a>
+            {% endif %}
+
+            {% if permissions.inventario > 0 %}
+            <a href="{% url 'inventario:productos_list' %}" class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
+                <i data-lucide="package" class="w-10 h-10 text-purple-500 mb-3 stroke-[1.5]"></i>
+                <h2 class="font-semibold text-gray-800">Inventario</h2>
+                <p class="text-xs text-gray-400 mt-1">{% if permissions.inventario == 1 %}Solo Lectura{% else %}Control Total{% endif %}</p>
+            </a>
+            {% endif %}
+
+            {% if permissions.contabilidad > 0 %}
+            <a href="#" class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
+                <i data-lucide="file-text" class="w-10 h-10 text-teal-500 mb-3 stroke-[1.5]"></i>
+                <h2 class="font-semibold text-gray-800">Contabilidad</h2>
+                <p class="text-xs text-gray-400 mt-1">{% if permissions.contabilidad == 1 %}Solo Lectura{% else %}Control Total{% endif %}</p>
+            </a>
+            {% endif %}
+
+            {% if permissions.reportes > 0 %}
+            <a href="#" class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
+                <i data-lucide="bar-chart-2" class="w-10 h-10 text-red-500 mb-3 stroke-[1.5]"></i>
+                <h2 class="font-semibold text-gray-800">Reportes</h2>
+                <p class="text-xs text-gray-400 mt-1">{% if permissions.reportes == 1 %}Solo Lectura{% else %}Control Total{% endif %}</p>
+            </a>
+            {% endif %}
+
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script>
+        lucide.createIcons();
+
+        function toggleDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.closest('.relative')) {
+                const dropdown = document.getElementById('userDropdown');
+                if (!dropdown.classList.contains('hidden')) {
+                    dropdown.classList.add('hidden');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
