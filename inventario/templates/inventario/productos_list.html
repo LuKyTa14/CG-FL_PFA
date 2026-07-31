@@ -128,11 +128,15 @@
                             {% if max_permission >= 2 %}
                             <td class="py-4 px-6 text-center">
                                 <div class="flex items-center justify-center space-x-3">
+                                    <!-- BOTONES -->
                                     <a href="{% url 'inventario:producto_edit' prod.pk %}" class="text-blue-600 hover:text-blue-800 transition-colors" title="Editar Producto">
                                         <i data-lucide="pencil" class="w-5 h-5"></i>
                                     </a>
                                     <a href="{% url 'inventario:stock_update' prod.pk %}" class="text-green-600 hover:text-green-800 transition-colors" title="Ajustar Stock Físico">
                                         <i data-lucide="package-plus" class="w-5 h-5"></i>
+                                    </a>
+                                    <a href="{% url 'inventario:historial_precios' prod.pk %}" class="text-purple-600 hover:text-purple-800 transition-colors" title="Ver Historial de Precios">
+                                        <i data-lucide="history" class="w-5 h-5"></i>
                                     </a>
                                     <form method="POST" action="{% url 'inventario:producto_delete' prod.pk %}" onsubmit="return confirm('¿Eliminar producto del catálogo?');">
                                         {% csrf_token %}

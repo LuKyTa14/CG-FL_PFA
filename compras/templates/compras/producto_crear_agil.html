@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Alta Rápida - GC-FL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style> 
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
+        input:not([type="hidden"]), select, textarea { 
+            width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem; margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body class="p-8 flex justify-center items-center min-h-screen">
+    
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md border-t-4 border-[#2a4365]">
+        <h2 class="text-2xl font-bold text-gray-800 mb-1">Alta Rápida</h2>
+        <p class="text-sm text-gray-500 mb-4">Solo ingresa la identificación básica del producto.</p>
+        
+        <!-- BLOQUE DE ERRORES: Si algo falla, ahora sí te va a avisar -->
+        {% if form.errors %}
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 text-sm">
+                <strong>Por favor revisa:</strong>
+                {{ form.errors }}
+            </div>
+        {% endif %}
+
+        <!-- Agregamos el ACTION con la URL exacta y el ID de la compra -->
+        <form method="POST" action="{% url 'compras:producto_rapido_desde_compra' compra.pk %}" class="space-y-4">
+            {% csrf_token %}
+            
+            <div><label class="text-sm font-semibold text-gray-700">Nombre</label>{{ form.nombre }}</div>
+            <div><label class="text-sm font-semibold text-gray-700">Marca</label>{{ form.marca }}</div>
+            <div>
+                <label class="text-sm font-semibold text-gray-700">
+                    Categoría <span class="text-xs text-gray-400 font-normal italic">(Opcional)</span>
+                </label>
+                {{ form.categoria }}
+            </div>
+            <div><label class="text-sm font-semibold text-gray-700">Código / SKU</label>{{ form.codigo }}</div>
+
+            <div class="flex gap-3 mt-6">
+                <a href="{% url 'compras:compra_detalle' compra.pk %}" class="w-1/3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-md text-center transition-colors shadow-sm">
+                    Cancelar
+                </a>
+                <button type="submit" class="w-2/3 bg-[#2a4365] hover:bg-[#1e324b] text-white font-bold py-3 rounded-md transition-colors shadow-sm">
+                    Guardar y Volver
+                </button>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

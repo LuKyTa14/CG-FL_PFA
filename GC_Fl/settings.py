@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'clientes',
     'proveedores',
     'inventario',
+    'compras',
+    'ventas',
 ]
 
 AUTH_USER_MODEL = 'users.User'

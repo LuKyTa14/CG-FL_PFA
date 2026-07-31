@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class User(AbstractUser):
-    # user_id, username, password y el validar de no repetir usuario (is_active).
+    # id, username, password y el validar de no repetir usuario (is_active).
     # AbstractUser se encarga de todo eso de forma segura.
 
     class Meta:
@@ -37,7 +37,6 @@ class Role(models.Model):
     
 
 class UserRole(models.Model):
-    # Corregido: ForeignKey en lugar de ForeingKey
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
 

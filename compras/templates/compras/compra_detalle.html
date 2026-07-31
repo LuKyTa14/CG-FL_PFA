@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalle de Compra - GC-FL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Librerías para el buscador en el desplegable (Select2) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <style> 
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; } 
+        /* Estilos para que Select2 se vea como Tailwind */
+        .select2-container .select2-selection--single { height: 38px; border-color: #d1d5db; border-radius: 0.375rem; display: flex; items-center; }
+        .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 38px; color: #374151; font-size: 0.875rem; }
+        .select2-container--default .select2-selection--single .select2-selection__arrow { height: 36px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <nav class="bg-[#2a4365] text-white px-6 py-3 shadow-md relative z-20">
+        <div class="flex items-center space-x-2">
+            <i data-lucide="shopping-cart" class="w-6 h-6"></i>
+            <span class="font-bold text-xl tracking-widest">GC-FL</span>
+        </div>
+    </nav>
+
+    <main class="flex-1 p-8 max-w-7xl mx-auto w-full">
+        
+        <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
+            <h1 class="text-2xl font-bold text-gray-800">
+                Compra #{{ compra.id|stringformat:"05d" }}
+                {% if compra.estado == 'PENDIENTE' %}
+                
+                    <span class="ml-2 bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full align-middle">BORRADOR</span>
+                {% else %}
+                    <span class="ml-2 bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full align-middle">INGRESADA</span>
+                {% endif %}
+            </h1>
+            <a href="{% url 'compras:compras_list' %}" class="text-sm text-blue-600 hover:underline">Volver a Compras</a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Panel Izquierdo (Formulario de Agregado y Botones Finales) -->
+            <div class="lg:col-span-1 space-y-6">
+                
+                {% if compra.estado == 'PENDIENTE' %}
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-bold text-gray-800 border-b border-gray-200 pb-2 mb-4">Agregar Producto</h3>
+                    
+                    <form method="POST" class="space-y-4">
+                        {% csrf_token %}
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Buscar Producto</label>
+                            
+                            <!-- El Select2 actúa sobre este select -->
+                            <select name="producto" id="lista-productos" class="w-full border border-gray-300 rounded-b-md py-2 px-3 focus:outline-none focus:border-[#2a4365]" required size="4">
+                            {% for choice in form.producto.field.queryset %}
+                                <option value="{{ choice.pk }}" class="py-1 border-b border-gray-100">
+                                    {{ choice.nombre }} - {{ choice.marca }} ({{ choice.codigo }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            
+                            <p class="text-xs text-gray-500 mt-2 text-right">
+                                ¿Falta el producto? 
+                                <a href="{% url 'compras:producto_rapido_desde_compra' compra.pk %}" class="text-blue-600 font-semibold hover:underline">Créalo aquí</a>
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Cantidad</label>
+                                <input type="number" name="cantidad" value="1" min="1" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365]" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-1">Costo Unitario</label>
+                                <input type="number" step="0.01" name="precio_costo" placeholder="0.00" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365]" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full mt-4 bg-[#2a4365] hover:bg-[#1e324b] text-white font-semibold py-2 px-4 rounded-md transition-colors flex justify-center items-center">
+                            <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Añadir al Borrador
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <!-- Ficha Informativa -->
+                <div class="bg-gray-50 rounded-lg border border-gray-200 p-5 text-sm">
+                    <p><strong>Proveedor:</strong> {{ compra.proveedor.nombre }}</p>
+                    <p><strong>Destino:</strong> {{ compra.sucursal.nombre }}</p>
+                    <p><strong>Fecha:</strong> {{ compra.fecha_compra|date:"d/m/Y" }}</p>
+                </div>
+
+                <!-- Botones de Acción Final -->
+                {% if compra.estado == 'PENDIENTE' %}
+                <div class="flex flex-col gap-3">
+                    <form method="POST" action="{% url 'compras:compra_finalizar' compra.pk %}" onsubmit="return confirm('¿FINALIZAR COMPRA?\nEsto sumará el stock de todos estos productos al inventario.');">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md shadow-md text-lg flex items-center justify-center">
+                            <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i> Confirmar e Ingresar Stock
+                        </button>
+                    </form>
+
+                    <form method="POST" action="{% url 'compras:compra_cancelar' compra.pk %}" onsubmit="return confirm('¿CANCELAR COMPRA?\nSe borrará todo este borrador y no ingresará nada.');">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full bg-red-100 text-red-600 hover:bg-red-200 font-semibold py-2 px-4 rounded-md transition-colors">
+                            Cancelar y Eliminar Borrador
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Panel Derecho (Lista de Items) -->
+            <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col">
+                <div class="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                    <h3 class="text-lg font-bold text-gray-800">Detalle de la Compra</h3>
+                    <span class="text-2xl font-black text-green-700">Total: ${{ compra.total }}</span>
+                </div>
+                
+                <div class="flex-1 overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase">Producto</th>
+                                <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase text-center">Cant.</th>
+                                <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase text-right">Costo</th>
+                                <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase text-right">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-gray-100">
+                            {% for item in compra.detalles.all %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="py-3 px-5">
+                                    <span class="font-bold text-gray-900">{{ item.producto.nombre }}</span>
+                                </td>
+                                <td class="py-3 px-5 text-center font-bold">{{ item.cantidad }}</td>
+                                <td class="py-3 px-5 text-right">${{ item.precio_costo }}</td>
+                                <td class="py-3 px-5 text-right font-bold text-[#2a4365]">${{ item.subtotal }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="py-10 text-center text-gray-400">El borrador está vacío.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script> 
+        lucide.createIcons(); 
+        // Inicializar el buscador de productos (Select2)
+        $(document).ready(function() {
+            $('select[name="producto"]').select2({
+                placeholder: "Escribe para buscar...",
+                allowClear: true
+            });
+        });
+    </script>
+</body>
+</html>

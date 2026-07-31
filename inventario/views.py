@@ -179,3 +179,26 @@ def producto_delete(request, pk):
         messages.success(request, 'Producto eliminado exitosamente.')
         
     return redirect('inventario:productos_list')
+
+# --- VER HISTORIA DE PRECIOS DEL PRODUCTO
+@login_required
+def historial_precios(request, pk):
+    # Validamos que el usuario tenga al menos permiso de lectura (1 o más)
+    max_permission = UserRole.objects.filter(user_id=request.user).aggregate(
+        max_permission=models.Max('role__inventario')
+    )['max_permission'] or 0
+
+    if max_permission < 1:
+        messages.error(request, 'No tienes permisos para ver el historial de precios.')
+        return redirect('inventario:productos_list')
+
+    producto = get_object_or_404(Producto, pk=pk)
+    
+    # Traemos todo el historial ordenado (el modelo ya lo ordena por -fecha_desde)
+    historial = producto.historial_precios.all()
+
+    return render(request, 'inventario/historial_precios.html', {
+        'producto': producto,
+        'historial': historial,
+        'max_permission': max_permission
+    })

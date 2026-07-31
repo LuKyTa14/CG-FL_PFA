@@ -1,5 +1,6 @@
 from django.db import models
 from core.models import Sucursal
+from django.utils import timezone
 
 # Productos por Sucursales
 class Producto(models.Model):
@@ -34,7 +35,30 @@ class Producto(models.Model):
 
     def __str__(self):
         return f"{self.marca} {self.nombre}"
+    
+    def save(self, *args, **kwargs): #FUNCION PARA GUARDAR HISTORIAL DE PRECIOS
+        is_new = self.pk is None
+        precio_venta_cambio = False
 
+        if not is_new:
+            # Nos fijamos si cambio el precio de venta
+            prod_viejo = Producto.objects.get(pk=self.pk)
+            if prod_viejo.precio_venta != self.precio_venta:
+                precio_venta_cambio = True
+
+        super().save(*args, **kwargs)
+
+        # Si es nuevo o el precio de venta cambio, guardamos historial
+        if is_new or precio_venta_cambio:
+            ultimo_historial = self.historial_precios.filter(fecha_hasta__isnull=True).first()
+            if ultimo_historial:
+                ultimo_historial.fecha_hasta = timezone.now()
+                ultimo_historial.save()
+
+            HistorialPrecio.objects.create(
+                producto=self,
+                precio_venta=self.precio_venta
+            )
 
 
 # Intersección entre Productos y Sucursales
@@ -59,3 +83,18 @@ class Inventario(models.Model):
 
     def __str__(self):
         return f"{self.producto.nombre} en {self.sucursal.nombre}: {self.cantidad} unidades"
+
+
+class HistorialPrecio(models.Model):
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='historial_precios')
+    precio_venta = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    fecha_desde = models.DateTimeField(auto_now_add=True)
+    fecha_hasta = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'historial_precios'
+        ordering = ['-fecha_desde']
+
+    def __str__(self):
+        return f"{self.producto.nombre} - ${self.precio_venta} desde {self.fecha_desde.strftime('%d/%m/%Y')}"
