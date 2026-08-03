@@ -31,10 +31,10 @@ class Producto(models.Model):
         db_table = 'productos'
         verbose_name = 'Producto'
         verbose_name_plural = 'Productos'
-        ordering = ['nombre']
+        ordering = ['nombre', 'marca']
 
     def __str__(self):
-        return f"{self.marca} {self.nombre}"
+        return f"{self.nombre} - {self.marca}"
     
     def save(self, *args, **kwargs): #FUNCION PARA GUARDAR HISTORIAL DE PRECIOS
         is_new = self.pk is None

@@ -97,15 +97,23 @@
             {% endif %}
 
             {% if permissions.clientes > 0 %}
-            <a href="{% url 'clientes:clientes_list' %}" class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
-                <i data-lucide="users" class="w-10 h-10 text-blue-500 mb-3 stroke-[1.5]"></i>
-                <h2 class="font-semibold text-gray-800">Clientes</h2>
-                <p class="text-xs text-gray-400 mt-1">{% if permissions.clientes == 1 %}Solo Lectura{% else %}Control Total{% endif %}</p>
-            </a>
+            <div class="col-span-1 md:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row overflow-hidden transition-all duration-300 hover:shadow-md">
+                <!-- Mitad Izquierda: Directorio -->
+                <a href="{% url 'clientes:clientes_list' %}" class="flex-1 p-6 flex flex-col items-center justify-center text-center border-b sm:border-b-0 sm:border-r border-gray-100 hover:bg-blue-50 transition-colors group">
+                    <i data-lucide="users" class="w-10 h-10 text-blue-500 mb-3 stroke-[1.5] group-hover:scale-110 transition-transform"></i>
+                    <h2 class="font-semibold text-gray-800">Clientes</h2>
+                    <p class="text-xs text-gray-400 mt-1">{% if permissions.clientes == 1 %}Solo Lectura{% else %}Control Total{% endif %}</p>
+                </a>
+                <!-- Mitad Derecha: Finanzas -->
+                <a href="{% url 'clientes:cuenta_corriente_list' %}" class="flex-1 p-6 flex flex-col items-center justify-center text-center hover:bg-orange-50 transition-colors group">
+                    <i data-lucide="wallet" class="w-10 h-10 text-orange-500 mb-3 stroke-[1.5] group-hover:scale-110 transition-transform"></i>
+                    <h2 class="font-semibold text-gray-800">Cuentas Corrientes</h2>
+                </a>
+            </div>
             {% endif %}
 
             {% if permissions.ventas > 0 %}
-            <a href="#" class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
+            <a href="{% url 'ventas:ventas_list' %}"  class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
                 <i data-lucide="trending-up" class="w-10 h-10 text-orange-500 mb-3 stroke-[1.5]"></i>
                 <h2 class="font-semibold text-gray-800">Ventas</h2>
                 <p class="text-xs text-gray-400 mt-1">{% if permissions.ventas == 1 %}Solo Lectura{% else %}Control Total{% endif %}</p>

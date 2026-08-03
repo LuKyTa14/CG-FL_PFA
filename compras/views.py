@@ -60,20 +60,68 @@ def compra_detalle(request, pk):
     max_permission = UserRole.objects.filter(user_id=request.user).aggregate(max_permission=models.Max('role__compras'))['max_permission'] or 0
     
     if request.method == 'POST' and max_permission >= 2 and compra.estado == 'PENDIENTE':
-        form = DetalleCompraForm(request.POST)
-        if form.is_valid():
-            detalle = form.save(commit=False)
-            detalle.compra = compra
-            detalle.save() 
+        
+        # Acción A: Eliminar el producto entero con el basurero
+        if 'delete_item' in request.POST:
+            detalle = get_object_or_404(DetalleCompra, pk=request.POST.get('delete_item'), compra=compra)
+            detalle.delete()
+            messages.success(request, 'Producto eliminado del borrador.')
             
-            compra.total = sum(d.subtotal for d in compra.detalles.all())
-            compra.save()
-            messages.success(request, 'Producto agregado al borrador.')
-            return redirect('compras:compra_detalle', pk=compra.pk)
-    else:
-        form = DetalleCompraForm()
+        # Acción B: Sumar 1 cantidad
+        elif 'sumar_item' in request.POST:
+            detalle = get_object_or_404(DetalleCompra, pk=request.POST.get('sumar_item'), compra=compra)
+            detalle.cantidad += 1
+            detalle.save()
+            
+        # Acción C: Restar 1 cantidad
+        elif 'restar_item' in request.POST:
+            detalle = get_object_or_404(DetalleCompra, pk=request.POST.get('restar_item'), compra=compra)
+            if detalle.cantidad > 1:
+                detalle.cantidad -= 1
+                detalle.save()
+            else:
+                detalle.delete()
+                
+        # Acción D: Agregar un producto nuevo (El formulario clásico)
+        else:
+            form = DetalleCompraForm(request.POST)
+            if form.is_valid():
+                producto = form.cleaned_data['producto']
+                cantidad = form.cleaned_data['cantidad']
+                precio_costo = form.cleaned_data['precio_costo']
+                
+                # Buscamos si el producto ya está en el ticket
+                detalle_existente = DetalleCompra.objects.filter(compra=compra, producto=producto).first()
+                
+                if detalle_existente:
+                    # Si ya está, le sumamos la cantidad y actualizamos al último costo ingresado
+                    detalle_existente.cantidad += cantidad
+                    detalle_existente.precio_costo = precio_costo
+                    detalle_existente.save()
+                    messages.success(request, f'Se sumaron {cantidad} unidades al producto existente.')
+                else:
+                    # Si no está, lo creamos
+                    detalle = form.save(commit=False)
+                    detalle.compra = compra
+                    detalle.save()
+                    messages.success(request, 'Producto agregado al borrador.')
+            else:
+                messages.error(request, 'Error al agregar el producto. Verifica los datos.')
 
-    return render(request, 'compras/compra_detalle.html', {'compra': compra, 'form': form, 'max_permission': max_permission})
+        # Pase lo que pase, recalculamos el Total de la compra
+        compra.total = sum(d.subtotal for d in compra.detalles.all())
+        compra.save()
+        
+        return redirect('compras:compra_detalle', pk=compra.pk)
+
+    # Si entramos por GET (solo cargar la pantalla)
+    form = DetalleCompraForm()
+    
+    return render(request, 'compras/compra_detalle.html', {
+        'compra': compra, 
+        'form': form, 
+        'max_permission': max_permission
+    })
 
 # --- VISTA: COPIA DE CREAR PRODUCTO PERO DESDE COMPRAS ---
 @login_required

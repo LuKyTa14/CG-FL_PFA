@@ -1,4 +1,6 @@
 from django.db import models
+from django.conf import settings
+from decimal import Decimal
 
 class Cliente(models.Model):
     TIPO_DOCUMENTO_CHOICES = [
@@ -26,6 +28,10 @@ class Cliente(models.Model):
     # Guardamos fecha de regristro 
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
+    # --- CAMPO PARA LA CUENTA CORRIENTE 
+    # Saldo positivo significa que el cliente debe plata. Saldo negativo o cero, esta al dia.
+    saldo_cuenta_corriente = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+
     class Meta:
         db_table = 'clientes'
         verbose_name = 'Cliente'
@@ -33,4 +39,21 @@ class Cliente(models.Model):
         ordering = ['nombre', 'apellido'] # Ordena por nombre
 
     def __str__(self):
-        return f"{self.nombre} {self.apellido} ({self.numero_documento})"
+        return f"{self.nombre} {self.apellido or ''} (Saldo: ${self.saldo_cuenta_corriente})"
+
+
+class MovimientoCuentaCorriente(models.Model):
+    TIPO_MOVIMIENTO = [
+        ('DEUDA', 'Deuda por Venta'),
+        ('PAGO', 'Pago / Entrega a Cuenta'),
+    ]
+    
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='movimientos')
+    fecha = models.DateTimeField(auto_now_add=True)
+    tipo = models.CharField(max_length=10, choices=TIPO_MOVIMIENTO)
+    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    descripcion = models.CharField(max_length=255)
+    cajero = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    
+    def __str__(self):
+        return f"{self.fecha.strftime('%d/%m/%Y')} - {self.cliente}: {self.tipo} (${self.monto})"
