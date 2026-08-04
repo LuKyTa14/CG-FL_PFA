@@ -97,7 +97,7 @@
                     <thead>
                         <tr class="bg-gray-50 border-b border-gray-200">
                             <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Identificador</th>
-                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nombre y Apellido</th>
+                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Apellido, Nombre</th>
                             <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Contacto</th>
                             <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Saldo Actual</th>
                             <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Acciones</th>
@@ -108,7 +108,7 @@
                         {% for cliente in page_obj %}
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="py-4 px-6 font-medium">{{ cliente.tipo_documento|default:"DNI" }} - {{ cliente.numero_documento|default:"-" }}</td>
-                            <td class="py-4 px-6 font-bold text-gray-900">{{ cliente.nombre }} {{ cliente.apellido|default:"" }}</td>
+                            <td class="py-4 px-6 font-bold text-gray-900">{{ cliente.apellido }}, {{ cliente.nombre |default:"" }}</td>
                             
                             <td class="py-4 px-6 hidden md:table-cell">
                                 <span class="block">{% if cliente.email %}{{ cliente.email }}{% else %}<span class="text-gray-400 italic">Sin correo</span>{% endif %}</span>

@@ -12,7 +12,11 @@ from django.db.models import Sum, Q
 from .models import Cliente, MovimientoCuentaCorriente
 from .forms import ClienteForm
 from users.models import UserRole
+from clientes.models import MovimientoCuentaCorriente, Cliente
+from core.models import Sucursal
+from ventas.models import Venta
 
+# --- LISTAR CLIENTE
 @login_required
 def clientes_list(request):
     # Validacion de Permisos
@@ -25,7 +29,7 @@ def clientes_list(request):
         return redirect('dashboard')
 
     # Obtener clientes y aplicar Filtros adaptados a tu modelo
-    clientes_list = Cliente.objects.all()
+    clientes_list = Cliente.objects.all().order_by('apellido')
 
     nombre = request.GET.get('nombre')
     documento = request.GET.get('documento')
@@ -84,7 +88,7 @@ def clientes_list(request):
 
     return render(request, 'clientes/clientes_list.html', context)
 
-
+# --- CREAR CLIENTE
 @login_required
 def cliente_create(request):
     max_permission = UserRole.objects.filter(user_id=request.user).aggregate(
@@ -106,7 +110,7 @@ def cliente_create(request):
 
     return render(request, 'clientes/cliente_form.html', {'form': form, 'accion': 'Crear'})
 
-
+# --- EDITAR CLIENTE
 @login_required
 def cliente_edit(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
@@ -136,7 +140,7 @@ def cliente_edit(request, pk):
 
     return render(request, 'clientes/cliente_form.html', context)
 
-
+# --- ELIMINAR CLIENTE
 @login_required
 def cliente_delete(request, pk):
     max_permission = UserRole.objects.filter(user_id=request.user).aggregate(
@@ -156,30 +160,25 @@ def cliente_delete(request, pk):
 
     return redirect('clientes:clientes_list')
 
-# --- LOGICA CUENTAS CORRIENTES
-
+# --- LOGICA DE MANEJO DE CUENTAS CORRIENTES
+# --- LISTAR CUENTAS CORRIENTES
 @login_required
 def cuenta_corriente_list(request):
-    # 1. Total en la calle (siempre de los que deben)
-    total_credito = Cliente.objects.filter(saldo_cuenta_corriente__gt=0).aggregate(
-        total=Sum('saldo_cuenta_corriente')
-    )['total'] or 0
+    # Total credito (siempre de los que deben)
+    total_credito = Cliente.objects.filter(saldo_cuenta_corriente__gt=0).aggregate(total=Sum('saldo_cuenta_corriente')) ['total'] or 0
 
-    # 2. Traemos todos los clientes ordenados por los que más deben
-    clientes = Cliente.objects.all().order_by('-saldo_cuenta_corriente')
+    clientes = Cliente.objects.all().order_by('apellido')
 
-    # 3. Aplicamos los filtros del buscador
+    # filtros del buscador
     documento_q = request.GET.get('documento')
     nombre_q = request.GET.get('nombre')
 
     if documento_q:
         clientes = clientes.filter(numero_documento__icontains=documento_q)
     if nombre_q:
-        clientes = clientes.filter(
-            Q(nombre__icontains=nombre_q) | Q(apellido__icontains=nombre_q)
-        )
+        clientes = clientes.filter(Q(nombre__icontains=nombre_q) | Q(apellido__icontains=nombre_q))
 
-    # 4. Paginación (igual que en clientes)
+    # Paginacion (igual que en clientes)
     paginator = Paginator(clientes, 15)
     page_obj = paginator.get_page(request.GET.get('page'))
     
@@ -188,27 +187,41 @@ def cuenta_corriente_list(request):
         'total_credito': total_credito
     })
 
+# --- DETALLE CUENTAS CORRIENTES
 @login_required
 def cuenta_corriente_detalle(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
     movimientos = cliente.movimientos.all().order_by('-fecha')
     
+    # 1. Traemos las sucursales de la BD
+    sucursales = Sucursal.objects.all()
+    
+    # 2. Traemos los métodos de pago, pero FILTRAMOS "Cuenta Corriente" (no se puede pagar deuda con deuda)
+    metodos_pago = [m for m in Venta.METODO_PAGO_CHOICES if m[0] != 'CUENTA_CORRIENTE']
+    
     if request.method == 'POST':
         monto_str = request.POST.get('monto', '0')
-        metodo_pago = request.POST.get('metodo_pago', 'Efectivo')
-        sucursal = request.POST.get('sucursal', 'Sede Central')
+        metodo_pago_key = request.POST.get('metodo_pago', 'EFECTIVO')
+        sucursal_id = request.POST.get('sucursal')
         nota = request.POST.get('descripcion', '')
         
         try:
             monto = Decimal(monto_str)
             if monto > 0:
                 with transaction.atomic():
-                    # TRUCO: Juntamos todos los datos en la descripción para el historial
-                    descripcion_completa = f"Pago en {metodo_pago} ({sucursal})"
+                    # 3. Traducimos el ID de la Sucursal a su Nombre real
+                    sucursal_obj = Sucursal.objects.filter(pk=sucursal_id).first()
+                    nombre_sucursal = sucursal_obj.nombre if sucursal_obj else "Sede Central"
+                    
+                    # 4. Traducimos la key del método ('EFECTIVO') a su nombre legible ('Efectivo')
+                    diccionario_metodos = dict(Venta.METODO_PAGO_CHOICES)
+                    nombre_metodo = diccionario_metodos.get(metodo_pago_key, metodo_pago_key)
+
+                    # Armamos la descripción perfecta para el historial
+                    descripcion_completa = f"Pago en {nombre_metodo} ({nombre_sucursal})"
                     if nota:
                         descripcion_completa += f" | {nota}"
 
-                    # La fecha de "Hoy" se pone sola gracias al auto_now_add=True del modelo
                     MovimientoCuentaCorriente.objects.create(
                         cliente=cliente,
                         tipo='PAGO',
@@ -230,5 +243,7 @@ def cuenta_corriente_detalle(request, pk):
         
     return render(request, 'clientes/cuenta_corriente_detalle.html', {
         'cliente': cliente,
-        'movimientos': movimientos
+        'movimientos': movimientos,
+        'sucursales': sucursales,
+        'metodos_pago': metodos_pago
     })

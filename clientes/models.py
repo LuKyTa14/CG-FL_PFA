@@ -45,15 +45,15 @@ class Cliente(models.Model):
 class MovimientoCuentaCorriente(models.Model):
     TIPO_MOVIMIENTO = [
         ('DEUDA', 'Deuda por Venta'),
-        ('PAGO', 'Pago / Entrega a Cuenta'),
+        ('PAGO', 'Entrega a Cuenta'),
     ]
     
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='movimientos')
+    cajero = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     fecha = models.DateTimeField(auto_now_add=True)
     tipo = models.CharField(max_length=10, choices=TIPO_MOVIMIENTO)
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     descripcion = models.CharField(max_length=255)
-    cajero = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     
     def __str__(self):
         return f"{self.fecha.strftime('%d/%m/%Y')} - {self.cliente}: {self.tipo} (${self.monto})"

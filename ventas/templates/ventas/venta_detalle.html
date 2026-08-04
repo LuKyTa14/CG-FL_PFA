@@ -17,7 +17,7 @@
     <nav class="bg-[#2a4365] text-white px-6 py-3 shadow-md relative z-20 flex justify-between items-center">
         <div class="flex items-center space-x-2">
             <i data-lucide="shopping-cart" class="w-6 h-6"></i>
-            <span class="font-bold text-xl tracking-widest">POS | Venta #{{ venta.id|stringformat:"06d" }}</span>
+            <span class="font-bold text-xl tracking-widest">GC-FL | Venta #{{ venta.id|stringformat:"06d" }}</span>
         </div>
         <a href="{% url 'ventas:ventas_list' %}" class="text-sm font-medium hover:text-gray-200">Volver a Ventas</a>
     </nav>
@@ -27,7 +27,7 @@
         <form method="POST" id="form-venta" class="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
             {% csrf_token %}
             
-            <!-- 1. ENCABEZADO DE LA FACTURA -->
+            <!-- ENCABEZADO DE LA FACTURA -->
             <div class="bg-gray-50 p-5 border-b border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4">
                 
                 <!-- Buscador Dinámico de Clientes -->
@@ -74,7 +74,7 @@
             </div>
 
             {% if venta.estado == 'PENDIENTE' %}
-            <!-- 2. BARRA DINÁMICA PARA AGREGAR PRODUCTO -->
+            <!-- BARRA DINÁMICA PARA AGREGAR PRODUCTO -->
             <div class="p-4 border-b border-gray-200 bg-blue-50 flex gap-3 items-end relative">
                 
                 <div class="flex-1">
@@ -107,7 +107,7 @@
             </div>
             {% endif %}
 
-            <!-- 3. DETALLE DE LA FACTURA -->
+            <!-- DETALLE DE LA FACTURA -->
             <div class="min-h-[250px]">
                 <table class="w-full text-left">
                     <thead class="bg-gray-100 border-b border-gray-200">
@@ -167,7 +167,7 @@
                 </table>
             </div>
 
-            <!-- 4. TOTALES Y BOTONES DE COBRO -->
+            <!-- TOTALES Y BOTONES DE COBRO -->
             <div class="bg-gray-800 text-white p-6 grid grid-cols-1 md:grid-cols-2 items-center gap-4">
                 <div>
                     <span class="block text-gray-400 text-sm font-bold uppercase tracking-widest">Total a Pagar</span>
@@ -176,7 +176,6 @@
                 
                 <div class="flex justify-end gap-3">
                     {% if venta.estado == 'PENDIENTE' %}
-                        <!-- NUEVO BOTÓN: Volver / Pausar -->
                         <a href="{% url 'ventas:ventas_list' %}" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-md transition-colors flex items-center shadow-sm">
                             Volver
                         </a>
