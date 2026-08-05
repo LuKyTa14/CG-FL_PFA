@@ -1,138 +1,128 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Detalle Cuenta Corriente - GC-FL</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style> body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; } </style>
-</head>
-<body class="min-h-screen flex flex-col">
+{% extends 'core/base.html' %}
 
-    <nav class="bg-[#2a4365] text-white px-6 py-3 shadow-md relative z-20">
-        <div class="flex items-center space-x-2">
-            <i data-lucide="book-open" class="w-6 h-6"></i>
-            <span class="font-bold text-xl tracking-widest">GC-FL</span>
+{% block title %}Detalle Cuenta Corriente - GC-FL{% endblock %}
+{% block nav_icon %}<i data-lucide="book-open" class="w-6 h-6"></i>{% endblock %}
+{% block nav_title %}| LIBRETA{% endblock %}
+
+{% block content %}
+    <!-- ================= CABECERA DE LA PÁGINA ================= -->
+    <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Cuenta Corriente: {{ cliente.nombre }} {{ cliente.apellido|default:"" }}</h1>
+            <p class="text-sm text-gray-500">Documento: {{ cliente.numero_documento }}</p>
         </div>
-    </nav>
+        <a href="{% url 'clientes:cuenta_corriente_list' %}" class="text-sm text-blue-600 hover:underline">Volver a la lista</a>
+    </div>
 
-    <main class="flex-1 p-8 max-w-6xl mx-auto w-full">
+    <!-- ================= MENSAJES DEL SISTEMA ================= -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative text-sm font-medium">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-800">Cuenta Corriente: {{ cliente.nombre }} {{ cliente.apellido|default:"" }}</h1>
-                <p class="text-sm text-gray-500">Documento: {{ cliente.numero_documento }}</p>
+        <!-- ================= PANEL IZQUIERDO: ESTADO Y COBRO ================= -->
+        <div class="lg:col-span-1 space-y-6">
+            
+            <!-- BLOQUE: Tarjeta de Saldo -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
+                <p class="text-sm font-bold text-gray-500 uppercase">Deuda Actual</p>
+                <p class="text-5xl font-black {% if cliente.saldo_cuenta_corriente > 0 %}text-orange-600{% else %}text-green-600{% endif %} my-2">
+                    ${{ cliente.saldo_cuenta_corriente }}
+                </p>
             </div>
-            <a href="{% url 'clientes:cuenta_corriente_list' %}" class="text-sm text-blue-600 hover:underline">Volver a la lista</a>
+
+            <!-- BLOQUE: Formulario de Pago -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-bold text-gray-800 border-b border-gray-200 pb-2 mb-4">Registrar Entrega</h3>
+                
+                <form method="POST" class="space-y-4">
+                    {% csrf_token %}
+                    
+                    <!-- Etiqueta Automática -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-md p-3 flex justify-between items-center mb-2">
+                        <span class="text-xs font-semibold text-blue-800 uppercase tracking-wider">Fecha de Cobro:</span>
+                        <span class="text-sm font-black text-blue-900 flex items-center"><i data-lucide="clock" class="w-4 h-4 mr-1"></i> Hoy (Automático)</span>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Monto a Pagar ($)</label>
+                        <input type="number" step="0.01" name="monto" max="{{ cliente.saldo_cuenta_corriente }}" placeholder="0.00" class="w-full border border-gray-300 rounded-md py-3 px-3 text-lg font-bold text-green-700 focus:outline-none focus:border-[#2a4365]" required>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Forma de Pago</label>
+                            <select name="metodo_pago" class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365]" required>
+                                {% for key, name in metodos_pago %}
+                                    <option value="{{ key }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Sucursal</label>
+                            <select name="sucursal" class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365]" required>
+                                {% for suc in sucursales %}
+                                    <option value="{{ suc.pk }}">{{ suc.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Nota (Opcional)</label>
+                        <input type="text" name="descripcion" placeholder="Ej: Entrega parcial acordada..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365]">
+                    </div>
+
+                    <button type="submit" class="w-full mt-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md transition-colors flex justify-center items-center shadow-md">
+                        <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i> Confirmar e Ingresar Pago
+                    </button>
+                </form>
+            </div>
         </div>
 
-        {% if messages %}
-            {% for message in messages %}
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative text-sm font-medium">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Panel Izquierdo: Estado y Cobro -->
-            <div class="lg:col-span-1 space-y-6">
-                <!-- Tarjeta de Saldo -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-                    <p class="text-sm font-bold text-gray-500 uppercase">Deuda Actual</p>
-                    <p class="text-5xl font-black {% if cliente.saldo_cuenta_corriente > 0 %}text-orange-600{% else %}text-green-600{% endif %} my-2">
-                        ${{ cliente.saldo_cuenta_corriente }}
-                    </p>
-                </div>
-
-                <!-- Formulario de Pago -->
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-bold text-gray-800 border-b border-gray-200 pb-2 mb-4">Registrar Entrega</h3>
-                    <form method="POST" class="space-y-4">
-                        {% csrf_token %}
-                        
-                        <!-- Etiqueta Automática -->
-                        <div class="bg-blue-50 border border-blue-200 rounded-md p-3 flex justify-between items-center mb-2">
-                            <span class="text-xs font-semibold text-blue-800 uppercase tracking-wider">Fecha de Cobro:</span>
-                            <span class="text-sm font-black text-blue-900 flex items-center"><i data-lucide="clock" class="w-4 h-4 mr-1"></i> Hoy (Automático)</span>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Monto a Pagar ($)</label>
-                            <input type="number" step="0.01" name="monto" max="{{ cliente.saldo_cuenta_corriente }}" placeholder="0.00" class="w-full border border-gray-300 rounded-md py-3 px-3 text-lg font-bold text-green-700 focus:outline-none focus:border-[#2a4365]" required>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Forma de Pago</label>
-                                <select name="metodo_pago" class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365]" required>
-                                    {% for key, name in metodos_pago %}
-                                        <option value="{{ key }}">{{ name }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Sucursal</label>
-                                <select name="sucursal" class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365]" required>
-                                    {% for suc in sucursales %}
-                                        <option value="{{ suc.pk }}">{{ suc.nombre }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Nota (Opcional)</label>
-                            <input type="text" name="descripcion" placeholder="Ej: Entrega parcial acordada..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365]">
-                        </div>
-
-                        <button type="submit" class="w-full mt-2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md transition-colors flex justify-center items-center shadow-md">
-                            <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i> Confirmar e Ingresar Pago
-                        </button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Panel Derecho: Historial (La Libreta) -->
-            <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div class="p-5 border-b border-gray-200 bg-gray-50">
-                    <h3 class="text-lg font-bold text-gray-800">Historial de Movimientos</h3>
-                </div>
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-white border-b border-gray-200">
-                            <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase">Fecha</th>
-                            <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase">Detalle</th>
-                            <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase text-right">Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-sm divide-y divide-gray-100">
-                        {% for mov in movimientos %}
-                        <tr class="hover:bg-gray-50">
-                            <td class="py-4 px-5 text-gray-500 whitespace-nowrap">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
-                            <td class="py-4 px-5">
-                                <span class="font-bold text-gray-900 block">{{ mov.descripcion }}</span>
-                                <span class="text-xs text-gray-400">Cajero: {{ mov.cajero.username|default:"Sistema" }}</span>
-                            </td>
-                            <td class="py-4 px-5 text-right font-bold text-lg {% if mov.tipo == 'DEUDA' %}text-orange-600{% else %}text-green-600{% endif %}">
-                                {% if mov.tipo == 'DEUDA' %}
-                                    <i data-lucide="arrow-up-right" class="w-4 h-4 inline text-orange-600"></i> +${{ mov.monto }}
-                                {% else %}
-                                    <i data-lucide="arrow-down-left" class="w-4 h-4 inline text-green-600"></i> -${{ mov.monto }}
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="3" class="py-12 text-center text-gray-400">No hay movimientos registrados.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <!-- ================= PANEL DERECHO: HISTORIAL (LA LIBRETA) ================= -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-5 border-b border-gray-200 bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800">Historial de Movimientos</h3>
             </div>
             
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-white border-b border-gray-200">
+                        <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase">Fecha</th>
+                        <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase">Detalle</th>
+                        <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase text-right">Monto</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-gray-100">
+                    {% for mov in movimientos %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-4 px-5 text-gray-500 whitespace-nowrap">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+                        <td class="py-4 px-5">
+                            <span class="font-bold text-gray-900 block">{{ mov.descripcion }}</span>
+                            <span class="text-xs text-gray-400">Cajero: {{ mov.cajero.username|default:"Sistema" }}</span>
+                        </td>
+                        <td class="py-4 px-5 text-right font-bold text-lg {% if mov.tipo == 'DEUDA' %}text-orange-600{% else %}text-green-600{% endif %}">
+                            {% if mov.tipo == 'DEUDA' %}
+                                <i data-lucide="arrow-up-right" class="w-4 h-4 inline text-orange-600"></i> +${{ mov.monto }}
+                            {% else %}
+                                <i data-lucide="arrow-down-left" class="w-4 h-4 inline text-green-600"></i> -${{ mov.monto }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="py-12 text-center text-gray-400">No hay movimientos registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </main>
-    <script> lucide.createIcons(); </script>
-</body>
-</html>
+        
+    </div>
+{% endblock content %}

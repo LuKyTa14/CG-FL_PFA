@@ -2,88 +2,131 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Ticket #{{ venta.id|stringformat:"06d" }}</title>
+    <title>Comprobante de Venta #{{ venta.id|stringformat:"06d" }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: 'Courier New', Courier, monospace; background: #e5e7eb; display: flex; justify-content: center; padding: 20px; }
-        .ticket { background: white; width: 350px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .center { text-align: center; }
-        .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
-        .bold { font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px; }
-        th, td { padding: 4px 0; text-align: left; }
-        th.right, td.right { text-align: right; }
-        th.center, td.center { text-align: center; }
-        .total-row { font-size: 18px; font-weight: bold; }
+        /* ================= ESTILOS DE IMPRESIÓN ================= */
         @media print {
-            body { background: white; padding: 0; }
-            .ticket { width: 100%; box-shadow: none; padding: 0; }
-            .no-print { display: none; }
+            .no-print { display: none !important; }
+            body { background-color: white !important; }
         }
-        .btn-print { display: block; width: 100%; padding: 15px; background: #2a4365; color: white; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 20px; border-radius: 5px; text-align: center;}
     </style>
 </head>
-<body>
+<body class="bg-gray-200 py-10 font-sans text-gray-800">
 
-    <div>
-        <button onclick="window.print()" class="btn-print no-print">Imprimir Ticket</button>
+    <div class="max-w-3xl mx-auto bg-white p-10 shadow-lg border border-gray-300">
+        
+        <!-- ================= BOTONES DE ACCIÓN ================= -->
+        <div class="text-right mb-8 no-print flex justify-end gap-3">
+            <a href="{% url 'ventas:ventas_list' %}" class="bg-gray-500 text-white px-4 py-2 rounded shadow hover:bg-gray-600 text-decoration-none font-bold">Volver</a>
+            <button onclick="window.print()" class="bg-[#2a4365] text-white px-4 py-2 rounded shadow hover:bg-[#1e324b] font-bold">Imprimir / PDF</button>
+        </div>
 
-        <div class="ticket">
-            <div class="center">
-                <h2 style="margin: 0;">GC-FL COMERCIAL</h2>
-                <p style="margin: 5px 0 0 0; font-size: 12px;">Sucursal: {{ venta.sucursal.nombre }}</p>
-                <p style="margin: 0; font-size: 12px;">Tel: (123) 456-7890</p>
+        <!-- ================= CABECERA DEL COMPROBANTE ================= -->
+        <div class="flex justify-between items-start border-b-2 border-gray-800 pb-6 mb-6">
+            <div>
+                <h1 class="text-3xl font-black tracking-widest text-[#2a4365]">GC-FL</h1>
+                <p class="text-sm text-gray-500">Sistema de Gestión Comercial</p>
+                <div class="mt-3 text-sm text-gray-700">
+                    <p class="font-bold">Sucursal: {{ venta.sucursal.nombre }}</p>
+                    <p class="text-sm text-gray-500">Teléfono: {{ venta.sucursal.telefono }}</p>
+                </div>
             </div>
-
-            <div class="divider"></div>
-
-            <div style="font-size: 14px;">
-                <p><strong>Ticket N°:</strong> {{ venta.id|stringformat:"06d" }}</p>
-                <p><strong>Fecha:</strong> {{ venta.fecha_venta|date:"d/m/Y H:i" }}</p>
-                <p><strong>Cajero:</strong> {{ venta.cajero.username }}</p>
-                <p><strong>Cliente:</strong> {% if venta.cliente %}{{ venta.cliente.nombre }} {{ venta.cliente.apellido|default:"" }}{% else %}Consumidor Final{% endif %}</p>
-                <p><strong>Pago:</strong> {{ venta.get_metodo_pago_display }}</p>
-            </div>
-
-            <div class="divider"></div>
-
-            <table>
-                <thead>
-                    <tr class="divider">
-                        <th>Cant</th>
-                        <th>Descripción</th>
-                        <th class="right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in venta.detalles.all %}
-                    <tr>
-                        <td class="center" style="vertical-align: top;">{{ item.cantidad }}</td>
-                        <td>
-                            {{ item.producto.nombre }}
-                            <br><span style="font-size: 11px;">${{ item.precio_unitario }} c/u</span>
-                        </td>
-                        <td class="right bold" style="vertical-align: top;">${{ item.subtotal }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-            <div class="divider"></div>
-
-            <table>
-                <tr class="total-row">
-                    <td>TOTAL</td>
-                    <td class="right">${{ venta.total }}</td>
-                </tr>
-            </table>
-
-            <div class="divider"></div>
-
-            <div class="center" style="font-size: 12px; margin-top: 20px;">
-                <p>¡Gracias por su compra!</p>
-                <p>Conservar este ticket para reclamos.</p>
+            <div class="text-right">
+                <h2 class="text-2xl font-bold text-gray-800 uppercase tracking-wide">Comprobante</h2>
+                <p class="text-gray-800 font-mono mt-1 text-xl">N° {{ venta.id|stringformat:"06d" }}</p>
+                <p class="text-gray-600 text-sm mt-2"><strong>Fecha:</strong> {{ venta.fecha_venta|date:"d/m/Y H:i" }}</p>
+                <p class="text-gray-600 text-sm"><strong>Cajero:</strong> {{ venta.cajero.username }}</p>
             </div>
         </div>
+
+        <!-- ================= DATOS DEL CLIENTE Y PAGOS ================= -->
+        <div class="flex justify-between mb-8">
+            <!-- Columna Izquierda: Cliente -->
+            <div class="w-1/2 pr-4">
+                <h3 class="text-xs font-bold text-gray-500 uppercase mb-1">Datos del Cliente</h3>
+                {% if venta.cliente %}
+                    <p class="font-bold text-lg text-gray-900">{{ venta.cliente.nombre }} {{ venta.cliente.apellido|default:"" }}</p>
+                    <p class="text-sm text-gray-600 mt-1">{{ venta.cliente.tipo_documento|default:"Doc" }}: {{ venta.cliente.numero_documento }}</p>
+                    {% if venta.cliente.localidad or venta.cliente.direccion %}
+                        <p class="text-sm text-gray-600">{{ venta.cliente.direccion|default:"" }} - {{ venta.cliente.localidad|default:"" }}</p>
+                    {% endif %}
+                {% else %}
+                    <p class="font-bold text-lg text-gray-600 italic">Consumidor Final</p>
+                {% endif %}
+            </div>
+            
+            <!-- Columna Derecha: Pagos Aplicados -->
+            <div class="w-1/2 pl-4 border-l border-gray-200">
+                <h3 class="text-xs font-bold text-gray-500 uppercase mb-1">Condición de Pago</h3>
+                <div class="text-sm text-gray-800 mt-1">
+                    {% for pago in venta.pagos.all %}
+                        <div class="flex justify-between border-b border-gray-100 py-1">
+                            <span>{{ pago.get_metodo_pago_display }}</span>
+                            <span class="font-bold">${{ pago.monto }}</span>
+                        </div>
+                    {% empty %}
+                        <p class="text-red-500 italic font-semibold">Pendiente de cobro / Borrador</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TABLA DE PRODUCTOS ================= -->
+        <table class="w-full text-left border-collapse mb-8">
+            <thead>
+                <tr class="border-b-2 border-gray-800 text-sm">
+                    <th class="py-2 text-center w-16">Cant.</th>
+                    <th class="py-2">Código</th>
+                    <th class="py-2">Descripción del Producto</th>
+                    <th class="py-2 text-right">Precio Unit.</th>
+                    <th class="py-2 text-right">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm divide-y divide-gray-200">
+                {% for item in venta.detalles.all %}
+                <tr>
+                    <td class="py-3 text-center font-bold text-lg text-gray-800">{{ item.cantidad }}</td>
+                    <td class="py-3 text-gray-500 text-xs font-mono">{{ item.producto.codigo }}</td>
+                    <td class="py-3 font-medium text-gray-900">
+                        {{ item.producto.nombre }}
+                        <span class="text-xs text-gray-400 block">{{ item.producto.marca }}</span>
+                    </td>
+                    <td class="py-3 text-right text-gray-600">${{ item.precio_unitario }}</td>
+                    <td class="py-3 text-right font-bold text-gray-900">${{ item.subtotal }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="py-8 text-center text-gray-500">Ticket sin productos cargados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- ================= TOTALES FINALES ================= -->
+        <div class="flex justify-end border-t-2 border-gray-800 pt-4 mb-8">
+            <div class="w-64 space-y-2">
+                <!-- Descuento (Si existe) -->
+                {% if venta.descuento > 0 %}
+                <div class="flex justify-between items-center text-sm text-gray-600">
+                    <span class="font-semibold uppercase tracking-wide">Descuento:</span>
+                    <span class="text-orange-600 font-bold">-${{ venta.descuento }}</span>
+                </div>
+                {% endif %}
+                
+                <!-- Total -->
+                <div class="flex justify-between items-center text-2xl font-black text-[#2a4365] mt-2">
+                    <span>TOTAL:</span>
+                    <span>${{ venta.total }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PIE DE PÁGINA ================= -->
+        <div class="text-center text-sm text-gray-500 border-t border-gray-200 pt-6 mt-8">
+            <p class="font-bold text-gray-700 uppercase tracking-wider">¡Gracias por su compra!</p>
+            <p class="mt-1">Conservar este comprobante para eventuales cambios o reclamos.</p>
+            <p class="text-xs mt-4 opacity-70">Software de Gestión GC-FL</p>
+        </div>
+
     </div>
 
 </body>

@@ -6,7 +6,7 @@ from django.contrib import messages
 
 from decimal import Decimal
 from clientes.models import Cliente, MovimientoCuentaCorriente
-from ventas.models import Venta
+from ventas.models import Venta, PagoVenta
 from contabilidad.models import CierreCaja
 from core.models import Sucursal
 
@@ -14,38 +14,37 @@ from core.models import Sucursal
 def dashboard_contabilidad(request):
     hoy = timezone.now()
     
-    # 1. INGRESOS REALES TOTALES
-    ventas_mes = Venta.objects.filter(
-        fecha_venta__year=hoy.year, fecha_venta__month=hoy.month, estado='COMPLETADA'
-    ).exclude(metodo_pago='CUENTA_CORRIENTE').aggregate(total=Sum('total'))['total'] or Decimal('0.00')
+    # 1. INGRESOS REALES (Ahora miramos PagoVenta en vez de Venta)
+    pagos_ventas_mes = PagoVenta.objects.filter(
+        venta__fecha_venta__year=hoy.year, 
+        venta__fecha_venta__month=hoy.month, 
+        venta__estado='COMPLETADA'
+    ).exclude(metodo_pago='CUENTA_CORRIENTE').aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
 
     pagos_cc_mes = MovimientoCuentaCorriente.objects.filter(
         fecha__year=hoy.year, fecha__month=hoy.month, tipo='PAGO'
     ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
 
-    ingresos_reales = ventas_mes + pagos_cc_mes
+    ingresos_reales = pagos_ventas_mes + pagos_cc_mes
 
-    # 2. DESGLOSE: EFECTIVO VS DIGITAL
-    ventas_efectivo = Venta.objects.filter(
-        fecha_venta__year=hoy.year, fecha_venta__month=hoy.month, estado='COMPLETADA', metodo_pago='EFECTIVO'
-    ).aggregate(total=Sum('total'))['total'] or Decimal('0.00')
-    
-    pagos_efectivo = MovimientoCuentaCorriente.objects.filter(
-        fecha__year=hoy.year, fecha__month=hoy.month, tipo='PAGO', metodo_pago='EFECTIVO'
+    # 2. DESGLOSE EFECTIVO VS DIGITAL
+    efectivo_ventas = PagoVenta.objects.filter(
+        venta__fecha_venta__year=hoy.year, 
+        venta__fecha_venta__month=hoy.month, 
+        venta__estado='COMPLETADA', 
+        metodo_pago='EFECTIVO'
     ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
     
-    total_efectivo = ventas_efectivo + pagos_efectivo
-    total_digital = ingresos_reales - total_efectivo # El resto es banco/MP/Tarjetas
+    efectivo_cc = MovimientoCuentaCorriente.objects.filter(
+        fecha__year=hoy.year, fecha__month=hoy.month, tipo='PAGO', metodo_pago='EFECTIVO'
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0.00')
 
-    # 3. PLATA EN LA CALLE
-    dinero_en_credito = Cliente.objects.filter(
-        saldo_cuenta_corriente__gt=0
-    ).aggregate(total=Sum('saldo_cuenta_corriente'))['total'] or Decimal('0.00')
+    total_efectivo = efectivo_ventas + efectivo_cc
+    total_digital = ingresos_reales - total_efectivo
 
-    # 4. GASTOS DE CAJA
-    gastos_caja_mes = CierreCaja.objects.filter(
-        fecha_cierre__year=hoy.year, fecha_cierre__month=hoy.month
-    ).aggregate(total=Sum('efectivo_usado'))['total'] or Decimal('0.00')
+    # (Lo de Plata en Calle y Gastos queda igual que lo tenías)
+    dinero_en_credito = Cliente.objects.filter(saldo_cuenta_corriente__gt=0).aggregate(total=Sum('saldo_cuenta_corriente'))['total'] or Decimal('0.00')
+    gastos_caja_mes = CierreCaja.objects.filter(fecha_cierre__year=hoy.year, fecha_cierre__month=hoy.month).aggregate(total=Sum('efectivo_usado'))['total'] or Decimal('0.00')
 
     context = {
         'mes_actual': hoy.strftime('%B %Y').capitalize(),
@@ -67,43 +66,50 @@ def cierre_caja_create(request):
         ultimo_cierre = CierreCaja.objects.filter(sucursal=sucursal).order_by('-fecha_cierre').first()
         fecha_inicio = ultimo_cierre.fecha_cierre if ultimo_cierre else timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
-        # 1. SUMAMOS LAS VENTAS NORMALES
-        ventas_del_turno = Venta.objects.filter(sucursal=sucursal, fecha_venta__gte=fecha_inicio, estado='COMPLETADA')
-        totales_ventas = ventas_del_turno.aggregate(
-            efectivo=Sum('total', filter=Q(metodo_pago='EFECTIVO')),
-            debito=Sum('total', filter=Q(metodo_pago='DEBITO')),
-            credito=Sum('total', filter=Q(metodo_pago='CREDITO')),
-            transfer=Sum('total', filter=Q(metodo_pago='TRANSFERENCIA')),
-            mpago=Sum('total', filter=Q(metodo_pago='MERCADO_PAGO_QR'))
+        # 1. SUMAMOS LOS PAGOS DE LAS VENTAS
+        pagos_del_turno = PagoVenta.objects.filter(
+            venta__sucursal=sucursal, 
+            venta__fecha_venta__gte=fecha_inicio, 
+            venta__estado='COMPLETADA'
+        )
+        
+        totales_ventas = pagos_del_turno.aggregate(
+            efectivo=Sum('monto', filter=Q(metodo_pago='EFECTIVO')),
+            debito=Sum('monto', filter=Q(metodo_pago='DEBITO')),
+            credito=Sum('monto', filter=Q(metodo_pago='CREDITO')),
+            transfer=Sum('monto', filter=Q(metodo_pago='TRANSFERENCIA')),
+            mpago=Sum('monto', filter=Q(metodo_pago='BILLETERA_VIRTUAL')), # Nombre nuevo
+            otros=Sum('monto', filter=Q(metodo_pago='OTROS')) # Nuevo
         )
 
         # 2. SUMAMOS LOS COBROS DE CUENTA CORRIENTE
-        pagos_cc_turno = MovimientoCuentaCorriente.objects.filter(sucursal=sucursal, fecha__gte=fecha_inicio, tipo='PAGO')
+        pagos_cc_turno = MovimientoCuentaCorriente.objects.filter(
+            sucursal=sucursal, fecha__gte=fecha_inicio, tipo='PAGO'
+        )
         totales_cc = pagos_cc_turno.aggregate(
             efectivo=Sum('monto', filter=Q(metodo_pago='EFECTIVO')),
             debito=Sum('monto', filter=Q(metodo_pago='DEBITO')),
             credito=Sum('monto', filter=Q(metodo_pago='CREDITO')),
             transfer=Sum('monto', filter=Q(metodo_pago='TRANSFERENCIA')),
-            mpago=Sum('monto', filter=Q(metodo_pago='MERCADO_PAGO_QR'))
+            mpago=Sum('monto', filter=Q(metodo_pago='BILLETERA_VIRTUAL')),
+            otros=Sum('monto', filter=Q(metodo_pago='OTROS'))
         )
 
-        # 3. UNIMOS AMBOS MUNDOS (Ventas + Cobros CC)
-        def sumar_totales(clave):
-            v = totales_ventas[clave] or Decimal('0.00')
-            c = totales_cc[clave] or Decimal('0.00')
-            return v + c
+        # 3. UNIMOS AMBOS MUNDOS
+        def sumar(clave):
+            return (totales_ventas[clave] or Decimal('0.00')) + (totales_cc[clave] or Decimal('0.00'))
 
         nuevo_cierre = CierreCaja(
             sucursal=sucursal,
             usuario=request.user,
             fecha_inicio=fecha_inicio,
             
-            # Usamos la función auxiliar para sumar las dos fuentes de ingresos
-            total_efectivo=sumar_totales('efectivo'),
-            total_tarjeta_debito=sumar_totales('debito'),
-            total_tarjeta_credito=sumar_totales('credito'),
-            total_transferencia=sumar_totales('transfer'),
-            total_mercado_pago=sumar_totales('mpago'),
+            total_efectivo=sumar('efectivo'),
+            total_tarjeta_debito=sumar('debito'),
+            total_tarjeta_credito=sumar('credito'),
+            total_transferencia=sumar('transfer'),
+            total_billetera_virtual=sumar('mpago'),
+            total_otros=sumar('otros'), # <-- Guardamos el nuevo
             
             efectivo_declarado=Decimal(request.POST.get('efectivo_declarado', '0.00')),
             efectivo_usado=Decimal(request.POST.get('efectivo_usado', '0.00')),
@@ -111,11 +117,10 @@ def cierre_caja_create(request):
         )
         nuevo_cierre.save()
         
-        messages.success(request, f"¡Caja cerrada en {sucursal.nombre}! Diferencia: ${nuevo_cierre.diferencia_efectivo}")
+        messages.success(request, f"¡Caja cerrada! Diferencia: ${nuevo_cierre.diferencia_efectivo}")
         return redirect('contabilidad:imprimir_arqueo', cierre_id=nuevo_cierre.id)
 
-    context = {'sucursales': Sucursal.objects.all()}
-    return render(request, 'contabilidad/cierre_form.html', context)
+    return render(request, 'contabilidad/cierre_form.html', {'sucursales': Sucursal.objects.all()})
 
 @login_required
 def historial_cierres(request):
@@ -130,4 +135,4 @@ def imprimir_arqueo(request, cierre_id):
         sucursal=cierre.sucursal, fecha_venta__gte=cierre.fecha_inicio, 
         fecha_venta__lte=cierre.fecha_cierre, estado='COMPLETADA'
     )
-    return render(request, 'contabilidad/ticket_arqueo.html', {'cierre': cierre, 'cantidad_ventas': ventas_del_turno.count()})
+    return render(request, 'contabilidad/comprobante_arqueo.html', {'cierre': cierre, 'cantidad_ventas': ventas_del_turno.count()})

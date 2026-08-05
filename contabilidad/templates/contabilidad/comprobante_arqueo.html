@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Arqueo Caja #{{ cierre.id|stringformat:"05d" }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* ================= ESTILOS DE IMPRESIÓN ================= */
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-200 py-10 font-sans text-gray-800">
+
+    <div class="max-w-3xl mx-auto bg-white p-10 shadow-lg border border-gray-300">
+        
+        <!-- ================= BOTONES DE ACCIÓN ================= -->
+        <div class="text-right mb-8 no-print flex justify-end gap-3">
+            <a href="{% url 'contabilidad:dashboard_contabilidad' %}" class="bg-gray-500 text-white px-4 py-2 rounded shadow hover:bg-gray-600 text-decoration-none font-bold">Volver</a>
+            <button onclick="window.print()" class="bg-[#2a4365] text-white px-4 py-2 rounded shadow hover:bg-[#1e324b] font-bold">Imprimir / PDF</button>
+        </div>
+
+        <!-- ================= CABECERA DEL DOCUMENTO ================= -->
+        <div class="flex justify-between items-start border-b-2 border-gray-800 pb-6 mb-6">
+            <div>
+                <h1 class="text-3xl font-black tracking-widest text-[#2a4365]">GC-FL</h1>
+                <p class="text-sm text-gray-500">Sistema de Gestión Comercial</p>
+                <div class="mt-3 text-sm text-gray-700">
+                    <p class="font-bold">Sucursal: {{ cierre.sucursal.nombre }}</p>
+                    <p class="text-sm text-gray-500">Teléfono: {{ cierre.sucursal.telefono }}</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <h2 class="text-2xl font-bold text-gray-800 uppercase tracking-wide">Cierre de Caja</h2>
+                <p class="text-gray-800 font-mono mt-1 text-xl">N° {{ cierre.id|stringformat:"05d" }}</p>
+                <p class="text-gray-600 text-sm mt-2"><strong>Apertura:</strong> {{ cierre.fecha_inicio|date:"d/m/Y H:i" }}</p>
+                <p class="text-gray-600 text-sm"><strong>Cierre:</strong> {{ cierre.fecha_cierre|date:"d/m/Y H:i" }}</p>
+            </div>
+        </div>
+
+        <!-- ================= DATOS OPERATIVOS ================= -->
+        <div class="flex justify-between mb-8">
+            <div class="w-1/2 pr-4">
+                <h3 class="text-xs font-bold text-gray-500 uppercase mb-1">Responsable de Caja</h3>
+                <p class="font-bold text-lg text-gray-900">{{ cierre.usuario.username|upper }}</p>
+                <p class="text-sm text-gray-600 mt-1">Operaciones Registradas: <strong>{{ cantidad_ventas }}</strong></p>
+            </div>
+            <div class="w-1/2 pl-4 border-l border-gray-200">
+                <h3 class="text-xs font-bold text-gray-500 uppercase mb-1">Comprobante</h3>
+                <p class="font-bold text-gray-900">Uso Interno</p>
+                <p class="text-sm text-gray-600 mt-1">Arqueo y control de valores físicos y del sistema.</p>
+            </div>
+        </div>
+
+        <!-- ================= CUERPO: INGRESOS VS FÍSICO ================= -->
+        <div class="flex flex-col md:flex-row gap-8 mb-8">
+            
+            <!-- Columna Izquierda: Sistema -->
+            <div class="flex-1">
+                <h3 class="text-sm font-bold text-gray-800 border-b-2 border-gray-800 pb-2 mb-4 uppercase tracking-wider">Ingresos del Sistema</h3>
+                
+                <table class="w-full text-sm text-left">
+                    <tbody class="divide-y divide-gray-100">
+                        <tr>
+                            <td class="py-2 text-gray-600">Efectivo</td>
+                            <td class="py-2 text-right font-medium">${{ cierre.total_efectivo }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Tarjeta de Débito</td>
+                            <td class="py-2 text-right font-medium">${{ cierre.total_tarjeta_debito }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Tarjeta de Crédito</td>
+                            <td class="py-2 text-right font-medium">${{ cierre.total_tarjeta_credito }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Transferencia</td>
+                            <td class="py-2 text-right font-medium">${{ cierre.total_transferencia }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Billeteras / QR</td>
+                            <!-- Nota: Usamos total_mercado_pago como lo tenías en la vista -->
+                            <td class="py-2 text-right font-medium">${{ cierre.total_mercado_pago }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Otros</td>
+                            <td class="py-2 text-right font-medium">${{ cierre.total_otros }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="flex justify-between items-center bg-gray-100 p-3 mt-4 rounded border border-gray-200">
+                    <span class="font-bold text-gray-700 uppercase text-xs tracking-wider">Total Sistema:</span>
+                    <span class="font-black text-lg text-[#2a4365]">${{ cierre.total_recaudado }}</span>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Control Físico -->
+            <div class="flex-1">
+                <h3 class="text-sm font-bold text-gray-800 border-b-2 border-gray-800 pb-2 mb-4 uppercase tracking-wider">Control Físico (Efectivo)</h3>
+                
+                <table class="w-full text-sm text-left mb-4">
+                    <tbody class="divide-y divide-gray-100">
+                        <tr>
+                            <td class="py-2 text-gray-600">Efectivo Declarado</td>
+                            <td class="py-2 text-right font-bold text-gray-900">${{ cierre.efectivo_declarado }}</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 text-gray-600">Efectivo Usado (Gastos)</td>
+                            <td class="py-2 text-right font-bold text-gray-600">- ${{ cierre.efectivo_usado }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 class="text-xs font-bold text-gray-500 uppercase mb-2">Resultado del Arqueo</h3>
+                
+                <!-- Lógica de colores para la diferencia -->
+                <div class="flex justify-between items-center p-4 rounded-md border 
+                    {% if cierre.diferencia_efectivo < 0 %} bg-red-50 border-red-200 text-red-800
+                    {% elif cierre.diferencia_efectivo > 0 %} bg-orange-50 border-orange-200 text-orange-800
+                    {% else %} bg-green-50 border-green-200 text-green-800 {% endif %}">
+                    
+                    <span class="font-bold uppercase tracking-wider text-sm">Diferencia:</span>
+                    <span class="font-black text-2xl">${{ cierre.diferencia_efectivo }}</span>
+                </div>
+
+                {% if cierre.diferencia_efectivo < 0 %}
+                    <p class="text-[10px] text-red-600 mt-1 italic font-semibold text-right">Faltante de caja detectado.</p>
+                {% elif cierre.diferencia_efectivo > 0 %}
+                    <p class="text-[10px] text-orange-600 mt-1 italic font-semibold text-right">Sobrante de caja detectado.</p>
+                {% else %}
+                    <p class="text-[10px] text-green-600 mt-1 italic font-semibold text-right">Caja cuadrada perfectamente.</p>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- ================= OBSERVACIONES ================= -->
+        {% if cierre.observaciones %}
+        <div class="mb-8 p-4 bg-gray-50 border border-gray-200 text-sm rounded-md">
+            <strong class="text-gray-700 uppercase tracking-wider text-xs block mb-1">Observaciones:</strong> 
+            <span class="text-gray-800">{{ cierre.observaciones }}</span>
+        </div>
+        {% endif %}
+
+        <!-- ================= PIE DE PÁGINA (FIRMAS) ================= -->
+        <div class="mt-16 pt-8 border-t border-gray-200 flex justify-around text-center text-sm text-gray-600">
+            <div class="w-48">
+                <div class="border-t border-gray-400 mb-2 mt-8"></div>
+                <p>Firma Cajero</p>
+                <p class="text-xs mt-1">{{ cierre.usuario.username|upper }}</p>
+            </div>
+            <div class="w-48">
+                <div class="border-t border-gray-400 mb-2 mt-8"></div>
+                <p>Firma Supervisor / Encargado</p>
+                <p class="text-xs mt-1">Sello / Aclaración</p>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

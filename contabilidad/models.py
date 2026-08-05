@@ -16,7 +16,8 @@ class CierreCaja(models.Model):
     total_tarjeta_debito = models.DecimalField(max_digits=12, decimal_places=2, default=0.00) 
     total_tarjeta_credito = models.DecimalField(max_digits=12, decimal_places=2, default=0.00) 
     total_transferencia = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    total_mercado_pago = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    total_billetera_virtual = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    total_otros = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     
     # Gran Total calculado y guardado en BD
     total_recaudado = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
@@ -43,7 +44,8 @@ class CierreCaja(models.Model):
             self.total_tarjeta_debito + 
             self.total_tarjeta_credito + 
             self.total_transferencia + 
-            self.total_mercado_pago
+            self.total_billetera_virtual +
+            self.total_otros
         )
         super().save(*args, **kwargs)
     

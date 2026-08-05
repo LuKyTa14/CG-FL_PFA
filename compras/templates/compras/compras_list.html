@@ -1,102 +1,85 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Compras a Proveedores - GC-FL</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style> body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; } </style>
-</head>
-<body class="min-h-screen flex flex-col">
+{% extends 'core/base.html' %}
 
-    <nav class="bg-[#2a4365] text-white px-6 py-3 shadow-md relative z-20">
-        <div class="flex items-center space-x-2">
-            <i data-lucide="shopping-cart" class="w-6 h-6"></i>
-            <span class="font-bold text-xl tracking-widest">GC-FL</span>
-        </div>
-    </nav>
+{% block title %}Compras a Proveedores - GC-FL{% endblock %}
+{% block nav_icon %}<i data-lucide="shopping-cart" class="w-6 h-6"></i>{% endblock %}
+{% block nav_title %}| COMPRAS{% endblock %}
 
-    <main class="flex-1 p-8 max-w-7xl mx-auto w-full">
-        
-        <!-- Título idéntico a inventario/clientes -->
-        <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
-            <h1 class="text-2xl font-bold text-gray-800">Compras / Ingresos</h1>
-            <a href="{% url 'dashboard' %}" class="text-sm text-blue-600 hover:underline">Volver al Panel Principal</a>
-        </div>
+{% block content %}
+    <!-- ================= CABECERA DE LA PÁGINA ================= -->
+    <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
+        <h1 class="text-2xl font-bold text-gray-800">Compras / Ingresos</h1>
+        <a href="{% url 'dashboard' %}" class="text-sm text-blue-600 hover:underline">Volver al Panel Principal</a>
+    </div>
 
-        <!-- Panel de Filtros -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <form method="GET" action="{% url 'compras:compras_list' %}" class="flex flex-col md:flex-row gap-4 items-end">
-                <div class="flex-1">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Buscar Proveedor</label>
-                    <input type="text" name="proveedor" value="{{ request.GET.proveedor }}" placeholder="Ej: Arcor, Coca-Cola..." class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365]">
-                </div>
-                <div class="w-full md:w-48">
-                    <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Ordenar por</label>
-                    <select name="orden" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365]">
-                        <option value="-fecha_compra" {% if request.GET.orden == '-fecha_compra' %}selected{% endif %}>Más Recientes</option>
-                        <option value="antiguas" {% if request.GET.orden == 'antiguas' %}selected{% endif %}>Más Antiguas</option>
-                    </select>
-                </div>
-                <div class="flex gap-2 w-full md:w-auto">
-                    <button type="submit" class="bg-[#2a4365] text-white px-4 py-2 rounded-md font-medium hover:bg-[#1e324b]">Filtrar</button>
-                    <a href="{% url 'compras:compras_list' %}" class="bg-gray-500 text-white px-4 py-2 rounded-md font-medium hover:bg-gray-600">Limpiar</a>
-                    {% if max_permission >= 2 %}
-                    <a href="{% url 'compras:compra_create' %}" class="bg-green-600 text-white px-4 py-2 rounded-md font-medium hover:bg-green-700 flex items-center ml-2">
-                        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Nuevo Ingreso
-                    </a>
-                    {% endif %}
-                </div>
-            </form>
-        </div>
+    <!-- ================= PANEL DE FILTROS ================= -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <form method="GET" action="{% url 'compras:compras_list' %}" class="flex flex-col md:flex-row gap-4 items-end">
+            <div class="flex-1">
+                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Buscar Proveedor</label>
+                <input type="text" name="proveedor" value="{{ request.GET.proveedor }}" placeholder="Ej: Arcor, Coca-Cola..." class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365]">
+            </div>
+            <div class="w-full md:w-48">
+                <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Ordenar por</label>
+                <select name="orden" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365]">
+                    <option value="-fecha_compra" {% if request.GET.orden == '-fecha_compra' %}selected{% endif %}>Más Recientes</option>
+                    <option value="antiguas" {% if request.GET.orden == 'antiguas' %}selected{% endif %}>Más Antiguas</option>
+                </select>
+            </div>
+            <div class="flex gap-2 w-full md:w-auto">
+                <button type="submit" class="bg-[#2a4365] text-white px-4 py-2 rounded-md font-medium hover:bg-[#1e324b]">Filtrar</button>
+                <a href="{% url 'compras:compras_list' %}" class="bg-gray-500 text-white px-4 py-2 rounded-md font-medium hover:bg-gray-600">Limpiar</a>
+                {% if max_permission >= 2 %}
+                <a href="{% url 'compras:compra_create' %}" class="bg-green-600 text-white px-4 py-2 rounded-md font-medium hover:bg-green-700 flex items-center ml-2">
+                    <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Nuevo Ingreso
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
 
-        <!-- Tabla -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-50 border-b border-gray-200">
-                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase">N° / Fecha</th>
-                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase">Proveedor</th>
-                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase text-center">Estado</th>
-                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase text-right">Total</th>
-                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase text-center">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="text-sm text-gray-700 divide-y divide-gray-200">
-                    {% for compra in page_obj %}
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="py-4 px-6">
-                            <span class="block font-bold text-gray-900">#{{ compra.id|stringformat:"05d" }}</span>
-                            <span class="text-xs text-gray-500">{{ compra.fecha_compra|date:"d/m/Y H:i" }}</span>
-                        </td>
-                        <td class="py-4 px-6 font-medium text-gray-900">{{ compra.proveedor.nombre }}</td>
-                        <td class="py-4 px-6 text-center">
-                            {% if compra.estado == 'PENDIENTE' %}
-                                <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full">Borrador</span>
-                            {% else %}
-                                <span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full">Ingresado</span>
-                            {% endif %}
-                        </td>
-                        <td class="py-4 px-6 text-right font-bold text-gray-900">${{ compra.total }}</td>
-                        <td class="py-4 px-6 text-center">
-                            <div class="flex justify-center space-x-3">
-                                <a href="{% url 'compras:compra_detalle' compra.pk %}" class="text-blue-600 hover:text-blue-800" title="Ver / Editar">
-                                    <i data-lucide="eye" class="w-5 h-5"></i>
-                                </a>
-                                <a href="{% url 'compras:compra_comprobante' compra.pk %}" target="_blank" class="text-gray-600 hover:text-gray-800" title="Remito">
-                                    <i data-lucide="printer" class="w-5 h-5"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="5" class="py-8 text-center text-gray-500">No hay compras.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </main>
-    <script> lucide.createIcons(); </script>
-</body>
-</html>
+    <!-- ================= TABLA DE RESULTADOS ================= -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50 border-b border-gray-200">
+                    <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase">N° / Fecha</th>
+                    <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase">Proveedor</th>
+                    <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase text-center">Estado</th>
+                    <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase text-right">Total</th>
+                    <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="text-sm text-gray-700 divide-y divide-gray-200">
+                {% for compra in page_obj %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="py-4 px-6">
+                        <span class="block font-bold text-gray-900">#{{ compra.id|stringformat:"05d" }}</span>
+                        <span class="text-xs text-gray-500">{{ compra.fecha_compra|date:"d/m/Y H:i" }}</span>
+                    </td>
+                    <td class="py-4 px-6 font-medium text-gray-900">{{ compra.proveedor.nombre }}</td>
+                    <td class="py-4 px-6 text-center">
+                        {% if compra.estado == 'PENDIENTE' %}
+                            <span class="bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full">Borrador</span>
+                        {% else %}
+                            <span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full">Ingresado</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-4 px-6 text-right font-bold text-gray-900">${{ compra.total }}</td>
+                    <td class="py-4 px-6 text-center">
+                        <div class="flex justify-center space-x-3">
+                            <a href="{% url 'compras:compra_detalle' compra.pk %}" class="text-blue-600 hover:text-blue-800" title="Ver / Editar">
+                                <i data-lucide="eye" class="w-5 h-5"></i>
+                            </a>
+                            <a href="{% url 'compras:compra_comprobante' compra.pk %}" target="_blank" class="text-gray-600 hover:text-gray-800" title="Remito">
+                                <i data-lucide="printer" class="w-5 h-5"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="py-8 text-center text-gray-500">No hay compras registradas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock content %}

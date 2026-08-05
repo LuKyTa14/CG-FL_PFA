@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}GC-FL ERP{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style> 
+        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; } 
+        .module-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        /* Podés sumar acá cualquier CSS global que uses en varias pantallas */
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- BARRA DE NAVEGACIÓN GLOBAL -->
+    <nav class="bg-[#2a4365] text-white px-6 py-3 flex justify-between items-center shadow-md relative z-20">
+        <div class="flex items-center space-x-2">
+            <!-- Bloque opcional por si querés cambiar el ícono en alguna pantalla -->
+            {% block nav_icon %}<i data-lucide="boxes" class="w-6 h-6"></i>{% endblock %}
+            <span class="font-bold text-xl tracking-widest">
+                GC-FL {% block nav_title %}{% endblock %}
+            </span>
+        </div>
+
+        <div class="hidden md:flex flex-1 max-w-xl mx-4"></div>
+
+        <div class="relative">
+            <button onclick="toggleDropdown()" class="flex items-center space-x-2 hover:text-gray-200 focus:outline-none transition-colors">
+                <span class="font-medium uppercase">{{ user.username }}</span>
+                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </button>
+
+            <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-100">
+                <div class="px-4 py-2 text-xs text-gray-500 border-b border-gray-100">
+                    Roles: {{ roles|join:", " }}
+                </div>
+                <a href="#" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                    <i data-lucide="user" class="w-4 h-4 mr-2"></i> Mi Perfil
+                </a>
+                <a href="{% url 'logout' %}" class="flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                    <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- EL CONTENIDO DINÁMICO DE CADA PANTALLA VA A INYECTARSE ACÁ -->
+    <main class="flex-1 p-8 max-w-7xl mx-auto w-full">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- SCRIPTS GLOBALES -->
+    <script>
+        lucide.createIcons();
+        function toggleDropdown() {
+            document.getElementById('userDropdown').classList.toggle('hidden');
+        }
+        window.onclick = function(event) {
+            if (!event.target.closest('.relative')) {
+                const dropdown = document.getElementById('userDropdown');
+                if (dropdown && !dropdown.classList.contains('hidden')) {
+                    dropdown.classList.add('hidden');
+                }
+            }
+        }
+    </script>
+    
+    <!-- Bloque por si alguna pantalla necesita un script especial (ej: Buscador flotante de Ventas) -->
+    {% block extra_js %}{% endblock %}
+    
+</body>
+</html>

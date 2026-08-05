@@ -1,62 +1,64 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Nueva Compra - GC-FL</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style> body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; } </style>
-</head>
-<body class="min-h-screen flex flex-col items-center justify-center py-10">
+{% extends 'core/base.html' %}
 
-    <div class="bg-white rounded-lg shadow-md border border-gray-200 p-8 w-full max-w-2xl">
-        <div class="border-b border-gray-300 pb-3 mb-6">
-            <h2 class="text-2xl font-bold text-[#1e293b]">Iniciar Ingreso de Mercadería</h2>
-            <p class="text-sm text-gray-500 mt-1">Paso 1: Selecciona el proveedor y la sucursal de destino.</p>
+{% block title %}Nueva Compra - GC-FL{% endblock %}
+{% block nav_icon %}<i data-lucide="shopping-cart" class="w-6 h-6"></i>{% endblock %}
+{% block nav_title %}| NUEVO INGRESO{% endblock %}
+
+{% block content %}
+    <!-- ================= CONTENEDOR CENTRADO ================= -->
+    <div class="flex items-center justify-center py-10">
+        <div class="bg-white rounded-lg shadow-md border border-gray-200 p-8 w-full max-w-2xl">
+            
+            <div class="border-b border-gray-300 pb-3 mb-6">
+                <h2 class="text-2xl font-bold text-[#1e293b]">Iniciar Ingreso de Mercadería</h2>
+                <p class="text-sm text-gray-500 mt-1">Paso 1: Selecciona el proveedor y la sucursal de destino.</p>
+            </div>
+
+            <form method="POST" class="space-y-5">
+                {% csrf_token %}
+
+                <!-- BLOQUE 1: PROVEEDOR Y SUCURSAL -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1 uppercase tracking-wider">Proveedor</label>
+                    <select name="proveedor" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
+                        <option value="" disabled selected>-- Seleccionar Proveedor --</option>
+                        {% for choice in form.proveedor.field.queryset %}
+                            <option value="{{ choice.pk }}">{{ choice.nombre }} </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1 uppercase tracking-wider">Sucursal Destino </label>
+                    <select name="sucursal" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
+                        <option value="" disabled selected>-- Seleccionar Sucursal --</option>
+                        {% for choice in form.sucursal.field.queryset %}
+                            <option value="{{ choice.pk }}">{{ choice.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- BLOQUE 2: NOTAS -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1 uppercase tracking-wider">Remito (Opcional)</label>
+                    {{ form.observaciones }}
+                </div>
+
+                <!-- BLOQUE 3: ACCIONES -->
+                <div class="pt-4 flex justify-end gap-3 border-t border-gray-100">
+                    <a href="{% url 'compras:compras_list' %}" class="bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold py-2 px-6 rounded-md transition-colors">Cancelar</a>
+                    <button type="submit" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-semibold py-2 px-6 rounded-md transition-colors flex items-center">
+                        Continuar a Carga de Productos <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                    </button>
+                </div>
+            </form>
         </div>
-
-        <form method="POST" class="space-y-5">
-            {% csrf_token %}
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1 uppercase tracking-wider">Proveedor</label>
-                <select name="proveedor" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
-                    <option value="" disabled selected>-- Seleccionar Proveedor --</option>
-                    {% for choice in form.proveedor.field.queryset %}
-                        <option value="{{ choice.pk }}">{{ choice.nombre }} </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1 uppercase tracking-wider">Sucursal Destino </label>
-                <select name="sucursal" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
-                    <option value="" disabled selected>-- Seleccionar Sucursal --</option>
-                    {% for choice in form.sucursal.field.queryset %}
-                        <option value="{{ choice.pk }}">{{ choice.nombre }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1 uppercase tracking-wider">Remito (Opcional)</label>
-                {{ form.observaciones }}
-            </div>
-
-            <div class="pt-4 flex justify-end gap-3 border-t border-gray-100">
-                <a href="{% url 'compras:compras_list' %}" class="bg-gray-200 text-gray-700 hover:bg-gray-300 font-semibold py-2 px-6 rounded-md transition-colors">Cancelar</a>
-                <button type="submit" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-semibold py-2 px-6 rounded-md transition-colors flex items-center">
-                    Continuar a Carga de Productos <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
-                </button>
-            </div>
-        </form>
     </div>
+{% endblock content %}
 
-    <script> 
-        lucide.createIcons(); 
-        // Aplicar estilos de tailwind al textarea de django
-        document.querySelector('textarea').classList.add('w-full', 'border', 'border-gray-300', 'rounded-md', 'py-2', 'px-3', 'focus:outline-none', 'focus:border-[#2a4365]', 'focus:ring-1', 'focus:ring-[#2a4365]');
-    </script>
-</body>
-</html>
+{% block extra_js %}
+<script> 
+    // Aplicar estilos de tailwind al textarea de django
+    document.querySelector('textarea').classList.add('w-full', 'border', 'border-gray-300', 'rounded-md', 'py-2', 'px-3', 'focus:outline-none', 'focus:border-[#2a4365]', 'focus:ring-1', 'focus:ring-[#2a4365]');
+</script>
+{% endblock extra_js %}

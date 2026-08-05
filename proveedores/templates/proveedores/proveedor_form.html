@@ -1,155 +1,118 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ accion }} Proveedor - GC-FL</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col">
+{% extends 'core/base.html' %}
 
-    <nav class="bg-[#2a4365] text-white px-6 py-3 flex justify-between items-center shadow-md relative z-20">
-        <div class="flex items-center space-x-2">
-            <i data-lucide="boxes" class="w-6 h-6"></i>
-            <span class="font-bold text-xl tracking-widest">GC-FL</span>
-        </div>
-        <div class="relative ml-auto">
-            <button onclick="toggleDropdown()" class="flex items-center space-x-2 hover:text-gray-200 focus:outline-none transition-colors">
-                <span class="font-medium text-transform: uppercase">{{ user.username }}</span>
-                <i data-lucide="chevron-down" class="w-4 h-4"></i>
-            </button>
-            <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-100">
-                <a href="{% url 'logout' %}" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                    <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Salir
-                </a>
-            </div>
-        </div>
-    </nav>
+{% block title %}{{ accion }} Proveedor - GC-FL{% endblock %}
+{% block nav_icon %}<i data-lucide="truck" class="w-6 h-6"></i>{% endblock %}
+{% block nav_title %}| PROVEEDORES{% endblock %}
 
-    <main class="flex-1 p-8 max-w-5xl mx-auto w-full relative z-10">
+{% block content %}
+    <div class="mb-8 border-b border-gray-300 pb-2 flex items-center text-gray-800">
+        <h1 class="text-2xl font-bold">Proveedores</h1>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-3xl mx-auto">
         
-        <div class="mb-8 border-b border-gray-300 pb-2 flex items-center text-gray-800">
-            <h1 class="text-2xl font-bold">Proveedores</h1>
+        <div class="border-b border-gray-300 pb-3 mb-6">
+            <h2 class="text-xl font-bold text-[#1e293b]">{{ accion }} Proveedor</h2>
         </div>
 
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-3xl mx-auto">
-            
-            <div class="border-b border-gray-300 pb-3 mb-6">
-                <h2 class="text-xl font-bold text-[#1e293b]">{{ accion }} Proveedor</h2>
+        <form method="POST" class="space-y-5">
+            {% csrf_token %}
+
+            {% if form.errors %}
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                <strong>Por favor corrige los siguientes errores:</strong>
+                {{ form.errors }}
+            </div>
+            {% endif %}
+
+            <!-- BLOQUE 1: DATOS PRINCIPALES -->
+            <div class="flex flex-col md:flex-row md:items-center">
+                <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Empresa / Nombre</label>
+                <input type="text" name="nombre" value="{{ form.nombre.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
             </div>
 
-            <form method="POST" class="space-y-5">
-                {% csrf_token %}
+            <div class="flex flex-col md:flex-row md:items-center">
+                <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Apellido <span class="text-gray-400 font-normal">(Opcional)</span></label>
+                <input type="text" name="apellido" value="{{ form.apellido.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
+            </div>
 
-                {% if form.errors %}
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
-                    <strong>Por favor corrige los siguientes errores:</strong>
-                    {{ form.errors }}
+            <!-- Selector de CUIT/DNI Centrado -->
+            <div class="flex flex-col md:flex-row md:items-center">
+                <div class="w-full md:w-1/3 mb-2 md:mb-0 md:pr-4">
+                    <select name="tipo_documento" class="w-full border border-gray-300 rounded-md py-2 px-3 bg-gray-50 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365] text-sm font-semibold text-gray-700">
+                        <option value="CUIT" {% if form.tipo_documento.value == 'CUIT' %}selected{% endif %}>CUIT</option>
+                        <option value="CUIL" {% if form.tipo_documento.value == 'CUIL' %}selected{% endif %}>CUIL</option>
+                        <option value="DNI" {% if form.tipo_documento.value == 'DNI' %}selected{% endif %}>DNI</option>
+                    </select>
                 </div>
-                {% endif %}
+                <input type="text" name="numero_documento" value="{{ form.numero_documento.value|default_if_none:'' }}" placeholder="Número de Identificación" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
+            </div>
 
-                <!-- BLOQUE 1: DATOS PRINCIPALES -->
+            <div class="flex flex-col md:flex-row md:items-center">
+                <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Rubro o Categoría <span class="text-gray-400 font-normal">(Opcional)</span></label>
+                <input type="text" name="rubro" value="{{ form.rubro.value|default_if_none:'' }}" placeholder="Ej: Informática, Mercadería..." class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
+            </div>
+
+            <!-- BLOQUE 2: CONTACTO -->
+            <div class="flex flex-col md:flex-row md:items-center">
+                <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Email <span class="text-gray-400 font-normal">(Opcional)</span></label>
+                <input type="email" name="email" value="{{ form.email.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
+            </div>
+
+            <div class="flex flex-col md:flex-row md:items-center">
+                <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Teléfono <span class="text-gray-400 font-normal">(Opcional)</span></label>
+                <input type="tel" name="telefono" value="{{ form.telefono.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
+            </div>
+
+            <hr class="border-gray-200 my-6">
+
+            <!-- BLOQUE 3: UBICACIÓN -->
+            <h3 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">Ubicación</h3>
+
+            <div class="flex flex-col md:flex-row md:items-center">
+                <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Provincia</label>
+                <input type="text" name="provincia" value="{{ form.provincia.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
+            </div>
+
+            <div class="flex flex-col md:flex-row md:items-center">
+                <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Localidad</label>
+                <input type="text" name="localidad" value="{{ form.localidad.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
+            </div>
+
+            <div class="flex flex-col md:flex-row md:items-center">
+                <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Dirección</label>
+                <input type="text" name="direccion" value="{{ form.direccion.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
+            </div>
+
+            <div class="flex flex-col md:flex-row md:items-center">
+                <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Barrio <span class="text-gray-400 font-normal">(Opcional)</span></label>
+                <input type="text" name="barrio" value="{{ form.barrio.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
+            </div>
+
+            <div class="flex flex-col md:flex-row md:items-center">
+                <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Código Postal</label>
+                <input type="text" name="codigo_postal" value="{{ form.codigo_postal.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
+            </div>
+
+            <!-- BLOQUE 4: FINANZAS -->
+            <div class="flex flex-col p-5 bg-[#f8fafc] rounded-lg border border-gray-200 mt-8">
+                <h3 class="text-sm font-bold text-gray-700 mb-4 border-b pb-2 uppercase tracking-wider">Datos Bancarios</h3>
                 <div class="flex flex-col md:flex-row md:items-center">
-                    <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Empresa / Nombre</label>
-                    <input type="text" name="nombre" value="{{ form.nombre.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
+                    <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">CBU / Alias <span class="text-gray-400 font-normal">(Opcional)</span></label>
+                    <input type="text" name="cbu_alias" value="{{ form.cbu_alias.value|default_if_none:'' }}" placeholder="Ej: ALIAS.BANCO o 22 dígitos del CBU" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
                 </div>
+            </div>
 
-                <div class="flex flex-col md:flex-row md:items-center">
-                    <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Apellido <span class="text-gray-400 font-normal">(Opcional)</span></label>
-                    <input type="text" name="apellido" value="{{ form.apellido.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                </div>
+            <!-- Botones de Acción -->
+            <div class="pt-6 flex justify-end gap-3 mt-6">
+                <a href="{% url 'proveedores:proveedores_list' %}" class="bg-[#e2e8f0] text-gray-700 hover:bg-[#cbd5e1] font-semibold py-2 px-6 rounded-md transition-colors shadow-sm text-center">
+                    Cancelar
+                </a>
+                <button type="submit" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-semibold py-2 px-6 rounded-md transition-colors shadow-sm">
+                    Guardar
+                </button>
+            </div>
 
-                <!-- Selector de CUIT/DNI Centrado -->
-                <div class="flex flex-col md:flex-row md:items-center">
-                    <div class="w-full md:w-1/3 mb-2 md:mb-0 md:pr-4">
-                        <select name="tipo_documento" class="w-full border border-gray-300 rounded-md py-2 px-3 bg-gray-50 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365] text-sm font-semibold text-gray-700">
-                            <option value="CUIT" {% if form.tipo_documento.value == 'CUIT' %}selected{% endif %}>CUIT</option>
-                            <option value="CUIL" {% if form.tipo_documento.value == 'CUIL' %}selected{% endif %}>CUIL</option>
-                            <option value="DNI" {% if form.tipo_documento.value == 'DNI' %}selected{% endif %}>DNI</option>
-                        </select>
-                    </div>
-                    <input type="text" name="numero_documento" value="{{ form.numero_documento.value|default_if_none:'' }}" placeholder="Número de Identificación" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
-                </div>
-
-                <div class="flex flex-col md:flex-row md:items-center">
-                    <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Rubro o Categoría <span class="text-gray-400 font-normal">(Opcional)</span></label>
-                    <input type="text" name="rubro" value="{{ form.rubro.value|default_if_none:'' }}" placeholder="Ej: Informática, Mercadería..." class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                </div>
-
-                <!-- BLOQUE 2: CONTACTO -->
-                <div class="flex flex-col md:flex-row md:items-center">
-                    <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Email <span class="text-gray-400 font-normal">(Opcional)</span></label>
-                    <input type="email" name="email" value="{{ form.email.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                </div>
-
-                <div class="flex flex-col md:flex-row md:items-center">
-                    <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Teléfono <span class="text-gray-400 font-normal">(Opcional)</span></label>
-                    <input type="tel" name="telefono" value="{{ form.telefono.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                </div>
-
-                <hr class="border-gray-200 my-6">
-
-                <!-- BLOQUE 3: UBICACIÓN -->
-                <h3 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wider">Ubicación</h3>
-
-                <div class="flex flex-col md:flex-row md:items-center">
-                    <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Provincia</label>
-                    <input type="text" name="provincia" value="{{ form.provincia.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
-                </div>
-
-                <div class="flex flex-col md:flex-row md:items-center">
-                    <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Localidad</label>
-                    <input type="text" name="localidad" value="{{ form.localidad.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
-                </div>
-
-                <div class="flex flex-col md:flex-row md:items-center">
-                    <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Dirección</label>
-                    <input type="text" name="direccion" value="{{ form.direccion.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
-                </div>
-
-                <div class="flex flex-col md:flex-row md:items-center">
-                    <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Barrio <span class="text-gray-400 font-normal">(Opcional)</span></label>
-                    <input type="text" name="barrio" value="{{ form.barrio.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                </div>
-
-                <div class="flex flex-col md:flex-row md:items-center">
-                    <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">Código Postal</label>
-                    <input type="text" name="codigo_postal" value="{{ form.codigo_postal.value|default_if_none:'' }}" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]" required>
-                </div>
-
-                <!-- BLOQUE 4: FINANZAS -->
-                <div class="flex flex-col p-5 bg-[#f8fafc] rounded-lg border border-gray-200 mt-8">
-                    <h3 class="text-sm font-bold text-gray-700 mb-4 border-b pb-2 uppercase tracking-wider">Datos Bancarios</h3>
-                    <div class="flex flex-col md:flex-row md:items-center">
-                        <label class="w-full md:w-1/3 text-sm font-medium text-gray-700 mb-1 md:mb-0">CBU / Alias <span class="text-gray-400 font-normal">(Opcional)</span></label>
-                        <input type="text" name="cbu_alias" value="{{ form.cbu_alias.value|default_if_none:'' }}" placeholder="Ej: ALIAS.BANCO o 22 dígitos del CBU" class="w-full md:w-2/3 border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                    </div>
-                </div>
-
-                <!-- Botones de Acción -->
-                <div class="pt-6 flex justify-end gap-3 mt-6">
-                    <a href="{% url 'proveedores:proveedores_list' %}" class="bg-[#e2e8f0] text-gray-700 hover:bg-[#cbd5e1] font-semibold py-2 px-6 rounded-md transition-colors shadow-sm text-center">
-                        Cancelar
-                    </a>
-                    <button type="submit" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-semibold py-2 px-6 rounded-md transition-colors shadow-sm">
-                        Guardar
-                    </button>
-                </div>
-
-            </form>
-        </div>
-    </main>
-
-    <script>
-        lucide.createIcons();
-        function toggleDropdown() {
-            document.getElementById('userDropdown').classList.toggle('hidden');
-        }
-    </script>
-</body>
-</html>
+        </form>
+    </div>
+{% endblock content %}

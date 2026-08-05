@@ -51,10 +51,11 @@ class MovimientoCuentaCorriente(models.Model):
     # Declaramos las opciones para romper la dependencia circular
     METODOS_PAGO = [
         ('EFECTIVO', 'Efectivo'),
-        ('DEBITO', 'Tarjeta de Débito'),
-        ('CREDITO', 'Tarjeta de Crédito'),
+        ('DEBITO', 'Tarjeta Débito'),
+        ('CREDITO', 'Tarjeta Crédito'),
         ('TRANSFERENCIA', 'Transferencia'),
-        ('MERCADO_PAGO_QR', 'Mercado Pago / QR'),
+        ('BILLETERA_VIRTUAL', 'Billetera Virtual / QR'), # Renombrado
+        ('OTROS', 'Otros'), # Agregado
     ]
     
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='movimientos')

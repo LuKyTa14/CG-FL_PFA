@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket #{{ venta.id|stringformat:"06d" }}</title>
+    <style>
+        /* ================= ESTILOS TIPO TICKETERA ================= */
+        body { font-family: 'Courier New', Courier, monospace; background: #e5e7eb; display: flex; justify-content: center; padding: 20px; }
+        .ticket { background: white; width: 350px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .center { text-align: center; }
+        .divider { border-bottom: 1px dashed #000; margin: 10px 0; }
+        .bold { font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 14px; }
+        th, td { padding: 4px 0; text-align: left; }
+        th.right, td.right { text-align: right; }
+        th.center, td.center { text-align: center; }
+        .total-row { font-size: 18px; font-weight: bold; }
+        
+        /* Ocultar botones al imprimir y ajustar márgenes */
+        @media print {
+            body { background: white; padding: 0; }
+            .ticket { width: 100%; box-shadow: none; padding: 0; }
+            .no-print { display: none; }
+        }
+        .btn-print { display: block; width: 100%; padding: 15px; background: #2a4365; color: white; border: none; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 20px; border-radius: 5px; text-align: center;}
+    </style>
+</head>
+<body>
+
+    <div>
+        <!-- ================= BOTÓN DE IMPRESIÓN ================= -->
+        <button onclick="window.print()" class="btn-print no-print">Imprimir Ticket</button>
+
+        <!-- ================= CONTENEDOR TICKET ================= -->
+        <div class="ticket">
+            
+            <!-- BLOQUE 1: ENCABEZADO DE LA EMPRESA -->
+            <div class="center">
+                <h2 style="margin: 0;">GC-FL COMERCIAL</h2>
+                <p style="margin: 5px 0 0 0; font-size: 12px;">Sucursal: {{ venta.sucursal.nombre }}</p>
+                <p style="margin: 0; font-size: 12px;">Tel: (123) 456-7890</p>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- BLOQUE 2: DATOS DE LA VENTA -->
+            <div style="font-size: 14px;">
+                <p><strong>Ticket N°:</strong> {{ venta.id|stringformat:"06d" }}</p>
+                <p><strong>Fecha:</strong> {{ venta.fecha_venta|date:"d/m/Y H:i" }}</p>
+                <p><strong>Cajero:</strong> {{ venta.cajero.username }}</p>
+                <p><strong>Cliente:</strong> {% if venta.cliente %}{{ venta.cliente.nombre }} {{ venta.cliente.apellido|default:"" }}{% else %}Consumidor Final{% endif %}</p>
+                
+                <!-- Ajuste para mostrar pagos combinados -->
+                <p><strong>Pago:</strong> 
+                    <br>
+                    {% for pago in venta.pagos.all %}
+                        - {{ pago.get_metodo_pago_display }}: ${{ pago.monto }}<br>
+                    {% empty %}
+                        Pendiente
+                    {% endfor %}
+                </p>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- BLOQUE 3: LISTA DE PRODUCTOS -->
+            <table>
+                <thead>
+                    <tr class="divider">
+                        <th>Cant</th>
+                        <th>Descripción</th>
+                        <th class="right">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in venta.detalles.all %}
+                    <tr>
+                        <td class="center" style="vertical-align: top;">{{ item.cantidad }}</td>
+                        <td>
+                            {{ item.producto.nombre }}
+                            <br><span style="font-size: 11px;">${{ item.precio_unitario }} c/u</span>
+                        </td>
+                        <td class="right bold" style="vertical-align: top;">${{ item.subtotal }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="divider"></div>
+
+            <!-- BLOQUE 4: TOTALES -->
+            <table>
+                <!-- Muestra el descuento si hubo uno -->
+                {% if venta.descuento > 0 %}
+                <tr>
+                    <td>Descuento</td>
+                    <td class="right">-${{ venta.descuento }}</td>
+                </tr>
+                {% endif %}
+                
+                <tr class="total-row">
+                    <td>TOTAL</td>
+                    <td class="right">${{ venta.total }}</td>
+                </tr>
+            </table>
+
+            <div class="divider"></div>
+
+            <!-- BLOQUE 5: PIE DE TICKET -->
+            <div class="center" style="font-size: 12px; margin-top: 20px;">
+                <p>¡Gracias por su compra!</p>
+                <p>Conservar este ticket para reclamos.</p>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

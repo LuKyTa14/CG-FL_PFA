@@ -5,7 +5,8 @@
     <title>Arqueo Caja - {{ cierre.id }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* CSS especial para ocultar el botón cuando se genera el PDF/Impresión */
+        /* ================= ESTILOS DE IMPRESIÓN ================= */
+        /* Oculta los botones y remueve el fondo gris para no gastar tinta */
         @media print {
             .no-print { display: none !important; }
             body { background-color: white !important; }
@@ -14,10 +15,10 @@
 </head>
 <body class="bg-gray-100 text-gray-900 font-mono p-8 flex justify-center">
 
-    <!-- Contenedor formato "Ticket" o "Hoja A4" -->
+    <!-- CONTENEDOR TICKET -->
     <div class="bg-white p-8 max-w-md w-full shadow-lg border border-gray-200 rounded-sm">
         
-        <!-- Botones de Acción (Se ocultan al imprimir) -->
+        <!-- ================= BOTONES DE ACCIÓN ================= -->
         <div class="flex justify-between items-center mb-6 no-print border-b border-gray-200 pb-4">
             <a href="{% url 'contabilidad:dashboard_contabilidad' %}" class="bg-gray-500 text-white px-4 py-2 rounded shadow hover:bg-gray-600 text-sm font-sans font-bold text-decoration-none">
                 Volver
@@ -27,11 +28,13 @@
             </button>
         </div>
 
+        <!-- ================= ENCABEZADO DEL TICKET ================= -->
         <div class="text-center mb-6">
             <h1 class="text-2xl font-bold uppercase tracking-wider mb-1">Cierre de Caja</h1>
             <p class="text-sm text-gray-600 border-b border-gray-400 pb-2">Comprobante Interno</p>
         </div>
 
+        <!-- BLOQUE 1: DATOS DEL CIERRE -->
         <div class="text-sm space-y-1 mb-6">
             <p><strong>Sucursal:</strong> {{ cierre.sucursal.nombre }}</p>
             <p><strong>Cajero:</strong> {{ cierre.usuario.username|upper }}</p>
@@ -42,15 +45,18 @@
 
         <div class="border-t-2 border-dashed border-gray-400 my-4"></div>
 
+        <!-- BLOQUE 2: INGRESOS DEL SISTEMA -->
         <h2 class="font-bold text-lg mb-2">Ingresos del Sistema</h2>
         <div class="text-sm space-y-2 mb-4">
             <div class="flex justify-between"><span>Efectivo:</span> <span>${{ cierre.total_efectivo }}</span></div>
-            <div class="flex justify-between"><span>T. Débito:</span> <span>${{ cierre.total_tarjeta_debito }}</span></div>
-            <div class="flex justify-between"><span>T. Crédito:</span> <span>${{ cierre.total_tarjeta_credito }}</span></div>
+            <div class="flex justify-between"><span>Tarjeta de Débito:</span> <span>${{ cierre.total_tarjeta_debito }}</span></div>
+            <div class="flex justify-between"><span>Tarjeta de Crédito:</span> <span>${{ cierre.total_tarjeta_credito }}</span></div>
             <div class="flex justify-between"><span>Transferencia:</span> <span>${{ cierre.total_transferencia }}</span></div>
-            <div class="flex justify-between"><span>Mercado Pago:</span> <span>${{ cierre.total_mercado_pago }}</span></div>
+            <div class="flex justify-between"><span>Billeteras Virtuales / QR:</span> <span>${{ cierre.total_billetera_virtual }}</span></div>
+            <div class="flex justify-between"><span>Otros:</span> <span>${{ cierre.total_otros }}</span></div>
         </div>
 
+        <!-- Total Esperado -->
         <div class="flex justify-between font-bold text-lg bg-gray-100 p-2 rounded mb-6">
             <span>Total Sistema:</span> 
             <span>${{ cierre.total_recaudado }}</span>
@@ -58,12 +64,14 @@
 
         <div class="border-t-2 border-dashed border-gray-400 my-4"></div>
 
+        <!-- BLOQUE 3: CONTROL FÍSICO (ARQUEO) -->
         <h2 class="font-bold text-lg mb-2">Control Físico</h2>
         <div class="text-sm space-y-2 mb-4">
             <div class="flex justify-between text-gray-600"><span>Efectivo Usado (Gastos):</span> <span>- ${{ cierre.efectivo_usado }}</span></div>
             <div class="flex justify-between font-bold text-md"><span>Efectivo Declarado:</span> <span>${{ cierre.efectivo_declarado }}</span></div>
         </div>
 
+        <!-- Resultado Final -->
         <div class="flex justify-between font-bold text-lg p-2 rounded mb-6 
             {% if cierre.diferencia_efectivo < 0 %} bg-red-100 text-red-800
             {% elif cierre.diferencia_efectivo > 0 %} bg-yellow-100 text-yellow-800
@@ -72,6 +80,7 @@
             <span>${{ cierre.diferencia_efectivo }}</span>
         </div>
 
+        <!-- Observaciones -->
         {% if cierre.observaciones %}
         <div class="text-sm border border-gray-300 p-3 bg-gray-50 rounded">
             <strong>Observaciones:</strong><br>
@@ -79,6 +88,7 @@
         </div>
         {% endif %}
 
+        <!-- BLOQUE 4: FIRMAS -->
         <div class="mt-12 text-center text-xs text-gray-500">
             <p>Firma Cajero: _________________________</p>
             <p class="mt-6">Firma Encargado: _________________________</p>

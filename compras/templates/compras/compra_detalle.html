@@ -1,252 +1,218 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Detalle de Compra - GC-FL</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style> 
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; } 
-    </style>
-</head>
-<body class="min-h-screen flex flex-col">
+{% extends 'core/base.html' %}
 
-    <nav class="bg-[#2a4365] text-white px-6 py-3 shadow-md relative z-20">
-        <div class="flex items-center space-x-2">
-            <i data-lucide="shopping-cart" class="w-6 h-6"></i>
-            <span class="font-bold text-xl tracking-widest">GC-FL</span>
-        </div>
-    </nav>
+{% block title %}Detalle de Compra - GC-FL{% endblock %}
+{% block nav_icon %}<i data-lucide="shopping-cart" class="w-6 h-6"></i>{% endblock %}
+{% block nav_title %}| COMPRA #{{ compra.id|stringformat:"05d" }}{% endblock %}
 
-    <main class="flex-1 p-8 max-w-7xl mx-auto w-full">
+{% block content %}
+    <!-- ================= CABECERA DE LA PÁGINA ================= -->
+    <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
+        <h1 class="text-2xl font-bold text-gray-800">
+            Compra #{{ compra.id|stringformat:"05d" }}
+            {% if compra.estado == 'PENDIENTE' %}
+                <span class="ml-2 bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full align-middle shadow-sm">BORRADOR</span>
+            {% else %}
+                <span class="ml-2 bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full align-middle shadow-sm">INGRESADA</span>
+            {% endif %}
+        </h1>
+        <a href="{% url 'compras:compras_list' %}" class="text-sm text-blue-600 hover:underline font-medium">Volver a Compras</a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
-            <h1 class="text-2xl font-bold text-gray-800">
-                Compra #{{ compra.id|stringformat:"05d" }}
-                {% if compra.estado == 'PENDIENTE' %}
-                    <span class="ml-2 bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full align-middle shadow-sm">BORRADOR</span>
-                {% else %}
-                    <span class="ml-2 bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full align-middle shadow-sm">INGRESADA</span>
-                {% endif %}
-            </h1>
-            <a href="{% url 'compras:compras_list' %}" class="text-sm text-blue-600 hover:underline font-medium">Volver a Compras</a>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- ================= PANEL IZQUIERDO: ACCIONES Y RESUMEN ================= -->
+        <div class="lg:col-span-1 space-y-6">
             
-            <!-- Panel Izquierdo (Formulario de Agregado y Botones Finales) -->
-            <div class="lg:col-span-1 space-y-6">
+            {% if compra.estado == 'PENDIENTE' %}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-lg font-bold text-gray-800 border-b border-gray-200 pb-2 mb-4">Agregar Producto</h3>
                 
-                {% if compra.estado == 'PENDIENTE' %}
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 class="text-lg font-bold text-gray-800 border-b border-gray-200 pb-2 mb-4">Agregar Producto</h3>
+                <form method="POST" class="space-y-4 relative">
+                    {% csrf_token %}
                     
-                    <form method="POST" class="space-y-4 relative">
-                        {% csrf_token %}
+                    <!-- BLOQUE: Buscador Dinámico -->
+                    <div class="relative">
+                        <label class="block text-sm font-semibold text-gray-700 mb-1">Buscar Producto</label>
+                        <input type="text" id="buscador-producto" placeholder="Código, Nombre o Marca..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] bg-blue-50" autocomplete="off" required>
+                        <input type="hidden" name="producto" id="producto-oculto" required>
                         
-                        <!-- NUEVO BUSCADOR DINÁMICO -->
-                        <div class="relative">
-                            <label class="block text-sm font-semibold text-gray-700 mb-1">Buscar Producto</label>
-                            
-                            <input type="text" id="buscador-producto" placeholder="Código, Nombre o Marca..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] bg-blue-50" autocomplete="off" required>
-                            
-                            <!-- Este input oculto es el que envía el ID a Django. El name DEBE ser "producto" -->
-                            <input type="hidden" name="producto" id="producto-oculto" required>
-                            
-                            <!-- Lista Flotante -->
-                            <ul id="lista-flotante" class="absolute z-50 w-full bg-white border border-gray-300 rounded shadow-xl hidden max-h-60 overflow-y-auto mt-1 text-sm top-[62px]">
-                                {% for choice in form.producto.field.queryset %}
-                                    <li class="cursor-pointer px-4 py-2 hover:bg-blue-100 border-b border-gray-100 item-busqueda" data-id="{{ choice.pk }}" data-nombre="{{ choice.nombre }} - {{ choice.marca }}">
-                                        <div class="flex justify-between items-center">
-                                            <span class="font-bold text-gray-800">{{ choice.nombre }} <span class="font-normal text-gray-500">({{ choice.marca }})</span></span>
-                                        </div>
-                                        <div class="text-xs text-gray-400">Código: {{ choice.codigo }}</div>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                            
-                            <p class="text-xs text-gray-500 mt-2 text-right">
-                                ¿Falta el producto? 
-                                <a href="{% url 'compras:producto_rapido_desde_compra' compra.pk %}" class="text-blue-600 font-semibold hover:underline">Créalo aquí</a>
-                            </p>
+                        <ul id="lista-flotante" class="absolute z-50 w-full bg-white border border-gray-300 rounded shadow-xl hidden max-h-60 overflow-y-auto mt-1 text-sm top-[62px]">
+                            {% for choice in form.producto.field.queryset %}
+                                <li class="cursor-pointer px-4 py-2 hover:bg-blue-100 border-b border-gray-100 item-busqueda" data-id="{{ choice.pk }}" data-nombre="{{ choice.nombre }} - {{ choice.marca }}">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold text-gray-800">{{ choice.nombre }} <span class="font-normal text-gray-500">({{ choice.marca }})</span></span>
+                                    </div>
+                                    <div class="text-xs text-gray-400">Código: {{ choice.codigo }}</div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        
+                        <p class="text-xs text-gray-500 mt-2 text-right">
+                            ¿Falta el producto? 
+                            <a href="{% url 'compras:producto_rapido_desde_compra' compra.pk %}" class="text-blue-600 font-semibold hover:underline">Créalo aquí</a>
+                        </p>
+                    </div>
+
+                    <!-- BLOQUE: Cantidad y Costo -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Cantidad</label>
+                            <input type="number" name="cantidad" id="input-cantidad" value="1" min="1" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] font-bold text-center" required>
                         </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Cantidad</label>
-                                <!-- Le agregué el id="input-cantidad" para el salto automático -->
-                                <input type="number" name="cantidad" id="input-cantidad" value="1" min="1" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] font-bold text-center" required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Costo Unit.</label>
-                                <input type="number" step="0.01" name="precio_costo" placeholder="0.00" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] text-right font-medium" required>
-                            </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Costo Unit.</label>
+                            <input type="number" step="0.01" name="precio_costo" placeholder="0.00" class="w-full border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:border-[#2a4365] text-right font-medium" required>
                         </div>
+                    </div>
 
-                        <button type="submit" class="w-full mt-4 bg-[#2a4365] hover:bg-[#1e324b] text-white font-semibold py-2 px-4 rounded-md transition-colors flex justify-center items-center shadow-sm">
-                            <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Añadir al Borrador
-                        </button>
-                    </form>
-                </div>
-                {% endif %}
+                    <button type="submit" class="w-full mt-4 bg-[#2a4365] hover:bg-[#1e324b] text-white font-semibold py-2 px-4 rounded-md transition-colors flex justify-center items-center shadow-sm">
+                        <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Añadir al Borrador
+                    </button>
+                </form>
+            </div>
+            {% endif %}
 
-                <!-- Ficha Informativa -->
-                <div class="bg-gray-50 rounded-lg border border-gray-200 p-5 text-sm shadow-sm">
-                    <p class="mb-1"><strong class="text-gray-700">Proveedor:</strong> <span class="text-gray-900">{{ compra.proveedor.nombre }}</span></p>
-                    <p class="mb-1"><strong class="text-gray-700">Destino:</strong> <span class="text-gray-900">{{ compra.sucursal.nombre }}</span></p>
-                    <p><strong class="text-gray-700">Fecha:</strong> <span class="text-gray-900">{{ compra.fecha_compra|date:"d/m/Y" }}</span></p>
-                </div>
-
-                <!-- Botones de Acción Final -->
-                {% if compra.estado == 'PENDIENTE' %}
-                <div class="flex flex-col gap-3">
-                    <form method="POST" action="{% url 'compras:compra_finalizar' compra.pk %}" onsubmit="return confirm('¿FINALIZAR COMPRA?\nEsto sumará el stock de todos estos productos al inventario.');">
-                        {% csrf_token %}
-                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md shadow-md text-lg flex items-center justify-center transition-colors">
-                            <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i> Confirmar Ingreso
-                        </button>
-                    </form>
-
-                    <form method="POST" action="{% url 'compras:compra_cancelar' compra.pk %}" onsubmit="return confirm('¿CANCELAR COMPRA?\nSe borrará todo este borrador y no ingresará nada.');">
-                        {% csrf_token %}
-                        <button type="submit" class="w-full bg-red-100 text-red-600 hover:bg-red-200 font-semibold py-2 px-4 rounded-md transition-colors">
-                            Cancelar y Eliminar Borrador
-                        </button>
-                    </form>
-                </div>
-                {% endif %}
+            <!-- BLOQUE: Ficha Informativa -->
+            <div class="bg-gray-50 rounded-lg border border-gray-200 p-5 text-sm shadow-sm">
+                <p class="mb-1"><strong class="text-gray-700">Proveedor:</strong> <span class="text-gray-900">{{ compra.proveedor.nombre }}</span></p>
+                <p class="mb-1"><strong class="text-gray-700">Destino:</strong> <span class="text-gray-900">{{ compra.sucursal.nombre }}</span></p>
+                <p><strong class="text-gray-700">Fecha:</strong> <span class="text-gray-900">{{ compra.fecha_compra|date:"d/m/Y" }}</span></p>
             </div>
 
-            <!-- Panel Derecho (Lista de Items) -->
-            <!-- Panel Derecho (Lista de Items) -->
-            <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-full min-h-[400px]">
-                <div class="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
-                    <h3 class="text-lg font-bold text-gray-800 flex items-center"><i data-lucide="list" class="w-5 h-5 mr-2"></i> Detalle de la Compra</h3>
-                    <span class="text-3xl font-black text-[#2a4365]">${{ compra.total }}</span>
-                </div>
-                
-                <div class="flex-1 overflow-x-auto">
-                    <!-- ENVOLVEMOS LA TABLA EN UN FORMULARIO -->
-                    <form method="POST">
-                        {% csrf_token %}
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-white">
-                                <tr class="border-b border-gray-200">
-                                    <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase w-32 text-center">Cant.</th>
-                                    <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase">Producto</th>
-                                    <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase text-right">Costo Unit.</th>
-                                    <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase text-center w-40">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-sm divide-y divide-gray-100">
-                                {% for item in compra.detalles.all %}
-                                <tr class="hover:bg-gray-50 group">
-                                    
-                                    <!-- COLUMNA CANTIDAD (+ y -) -->
-                                    <td class="py-3 px-5 text-center">
-                                        <div class="flex items-center justify-center space-x-2">
-                                            {% if compra.estado == 'PENDIENTE' %}
-                                            <button type="submit" name="restar_item" value="{{ item.id }}" class="text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 rounded p-1 transition-colors" title="Restar 1">
-                                                <i data-lucide="minus" class="w-4 h-4"></i>
-                                            </button>
-                                            {% endif %}
-                                            
-                                            <span class="font-bold text-lg text-gray-700 w-6">{{ item.cantidad }}</span>
-                                            
-                                            {% if compra.estado == 'PENDIENTE' %}
-                                            <button type="submit" name="sumar_item" value="{{ item.id }}" class="text-gray-400 hover:text-blue-500 bg-gray-100 hover:bg-blue-50 rounded p-1 transition-colors" title="Sumar 1">
-                                                <i data-lucide="plus" class="w-4 h-4"></i>
-                                            </button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
+            <!-- BLOQUE: Botones de Confirmación Final -->
+            {% if compra.estado == 'PENDIENTE' %}
+            <div class="flex flex-col gap-3">
+                <form method="POST" action="{% url 'compras:compra_finalizar' compra.pk %}" onsubmit="return confirm('¿FINALIZAR COMPRA?\nEsto sumará el stock de todos estos productos al inventario.');">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md shadow-md text-lg flex items-center justify-center transition-colors">
+                        <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i> Confirmar Ingreso
+                    </button>
+                </form>
 
-                                    <td class="py-4 px-5">
-                                        <span class="font-bold text-gray-900 text-base">{{ item.producto.nombre }}</span>
-                                        <span class="text-gray-500 block text-xs">{{ item.producto.marca }} | Cód: {{ item.producto.codigo }}</span>
-                                    </td>
-                                    
-                                    <td class="py-4 px-5 text-right text-gray-500">${{ item.precio_costo }}</td>
-                                    
-                                    <!-- COLUMNA SUBTOTAL + BASURERO -->
-                                    <td class="py-4 px-5 text-right font-black text-green-700 text-lg flex items-center justify-end h-full">
-                                        <span>${{ item.subtotal }}</span>
-                                        
+                <form method="POST" action="{% url 'compras:compra_cancelar' compra.pk %}" onsubmit="return confirm('¿CANCELAR COMPRA?\nSe borrará todo este borrador y no ingresará nada.');">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full bg-red-100 text-red-600 hover:bg-red-200 font-semibold py-2 px-4 rounded-md transition-colors">
+                        Cancelar y Eliminar Borrador
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ================= PANEL DERECHO: LISTA DE PRODUCTOS ================= -->
+        <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col h-full min-h-[400px]">
+            <div class="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-lg">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center"><i data-lucide="list" class="w-5 h-5 mr-2"></i> Detalle de la Compra</h3>
+                <span class="text-3xl font-black text-[#2a4365]">${{ compra.total }}</span>
+            </div>
+            
+            <div class="flex-1 overflow-x-auto">
+                <form method="POST">
+                    {% csrf_token %}
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white">
+                            <tr class="border-b border-gray-200">
+                                <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase w-32 text-center">Cant.</th>
+                                <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase">Producto</th>
+                                <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase text-right">Costo Unit.</th>
+                                <th class="py-3 px-5 text-xs font-semibold text-gray-500 uppercase text-center w-40">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-gray-100">
+                            {% for item in compra.detalles.all %}
+                            <tr class="hover:bg-gray-50 group">
+                                <td class="py-3 px-5 text-center">
+                                    <div class="flex items-center justify-center space-x-2">
                                         {% if compra.estado == 'PENDIENTE' %}
-                                        <button type="submit" name="delete_item" value="{{ item.id }}" class="ml-3 text-red-300 hover:text-red-600 transition-colors" title="Quitar producto" onclick="return confirm('¿Eliminar este producto de la compra?');">
-                                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                        <button type="submit" name="restar_item" value="{{ item.id }}" class="text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 rounded p-1 transition-colors" title="Restar 1">
+                                            <i data-lucide="minus" class="w-4 h-4"></i>
                                         </button>
                                         {% endif %}
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr><td colspan="4" class="py-16 text-center text-gray-400 text-lg">El borrador está vacío. Escanea un producto.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </form>
-                </div>
+                                        <span class="font-bold text-lg text-gray-700 w-6">{{ item.cantidad }}</span>
+                                        {% if compra.estado == 'PENDIENTE' %}
+                                        <button type="submit" name="sumar_item" value="{{ item.id }}" class="text-gray-400 hover:text-blue-500 bg-gray-100 hover:bg-blue-50 rounded p-1 transition-colors" title="Sumar 1">
+                                            <i data-lucide="plus" class="w-4 h-4"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="py-4 px-5">
+                                    <span class="font-bold text-gray-900 text-base">{{ item.producto.nombre }}</span>
+                                    <span class="text-gray-500 block text-xs">{{ item.producto.marca }} | Cód: {{ item.producto.codigo }}</span>
+                                </td>
+                                <td class="py-4 px-5 text-right text-gray-500">${{ item.precio_costo }}</td>
+                                <td class="py-4 px-5 text-right font-black text-green-700 text-lg flex items-center justify-end h-full">
+                                    <span>${{ item.subtotal }}</span>
+                                    {% if compra.estado == 'PENDIENTE' %}
+                                    <button type="submit" name="delete_item" value="{{ item.id }}" class="ml-3 text-red-300 hover:text-red-600 transition-colors" title="Quitar producto" onclick="return confirm('¿Eliminar este producto de la compra?');">
+                                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="py-16 text-center text-gray-400 text-lg">El borrador está vacío. Agrega un producto.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </form>
             </div>
-
         </div>
-    </main>
+    </div>
+{% endblock content %}
 
-    <!-- SCRIPT DEL BUSCADOR FLOTANTE -->
-    <script> 
-        lucide.createIcons(); 
-        
-        function inicializarBuscador(inputId, listaId, itemClass, hiddenId, nextFocusId) {
-            const inputElement = document.getElementById(inputId);
-            const listaElement = document.getElementById(listaId);
-            const hiddenElement = document.getElementById(hiddenId);
-            const items = document.querySelectorAll('.' + itemClass);
+{% block extra_js %}
+<!-- SCRIPT DEL BUSCADOR FLOTANTE -->
+<script> 
+    function inicializarBuscador(inputId, listaId, itemClass, hiddenId, nextFocusId) {
+        const inputElement = document.getElementById(inputId);
+        const listaElement = document.getElementById(listaId);
+        const hiddenElement = document.getElementById(hiddenId);
+        const items = document.querySelectorAll('.' + itemClass);
 
-            if(inputElement && listaElement) {
-                inputElement.addEventListener('focus', function() {
-                    listaElement.classList.remove('hidden');
-                });
+        if(inputElement && listaElement) {
+            inputElement.addEventListener('focus', function() {
+                listaElement.classList.remove('hidden');
+            });
 
-                inputElement.addEventListener('input', function() {
-                    const filtro = this.value.toLowerCase();
-                    listaElement.classList.remove('hidden');
-                    
-                    items.forEach(item => {
-                        const texto = item.innerText.toLowerCase();
-                        if (texto.includes(filtro)) {
-                            item.style.display = 'block';
-                        } else {
-                            item.style.display = 'none';
-                        }
-                    });
-                });
-
-                inputElement.addEventListener('change', function() {
-                    if (this.value.trim() === '') hiddenElement.value = '';
-                });
-
-                document.addEventListener('click', function(e) {
-                    if (!inputElement.contains(e.target) && !listaElement.contains(e.target)) {
-                        listaElement.classList.add('hidden');
+            inputElement.addEventListener('input', function() {
+                const filtro = this.value.toLowerCase();
+                listaElement.classList.remove('hidden');
+                
+                items.forEach(item => {
+                    const texto = item.innerText.toLowerCase();
+                    if (texto.includes(filtro)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
                     }
                 });
+            });
 
-                items.forEach(item => {
-                    item.addEventListener('click', function() {
-                        inputElement.value = this.getAttribute('data-nombre');
-                        hiddenElement.value = this.getAttribute('data-id');
-                        listaElement.classList.add('hidden');
-                        
-                        if(nextFocusId) {
-                            document.getElementById(nextFocusId).focus();
-                        }
-                    });
+            inputElement.addEventListener('change', function() {
+                if (this.value.trim() === '') hiddenElement.value = '';
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!inputElement.contains(e.target) && !listaElement.contains(e.target)) {
+                    listaElement.classList.add('hidden');
+                }
+            });
+
+            items.forEach(item => {
+                item.addEventListener('click', function() {
+                    inputElement.value = this.getAttribute('data-nombre');
+                    hiddenElement.value = this.getAttribute('data-id');
+                    listaElement.classList.add('hidden');
+                    
+                    if(nextFocusId) {
+                        document.getElementById(nextFocusId).focus();
+                    }
                 });
-            }
+            });
         }
+    }
 
-        // Activamos el buscador y le pedimos que salte a "input-cantidad" al seleccionar
-        inicializarBuscador('buscador-producto', 'lista-flotante', 'item-busqueda', 'producto-oculto', 'input-cantidad');
-    </script>
-</body>
-</html>
+    inicializarBuscador('buscador-producto', 'lista-flotante', 'item-busqueda', 'producto-oculto', 'input-cantidad');
+</script>
+{% endblock extra_js %}

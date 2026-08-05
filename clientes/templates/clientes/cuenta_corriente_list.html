@@ -1,177 +1,138 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuentas Corrientes - GC-FL</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+{% extends 'core/base.html' %}
+
+{% block title %}Cuentas Corrientes - GC-FL{% endblock %}
+{% block nav_icon %}<i data-lucide="wallet" class="w-6 h-6"></i>{% endblock %}
+{% block nav_title %}| CUENTAS CORRIENTES{% endblock %}
+
+{% block content %}
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
         .table-container { overflow-x: auto; }
     </style>
-</head>
-<body class="min-h-screen flex flex-col">
 
-    <!-- Barra de Navegación -->
-    <nav class="bg-[#2a4365] text-white px-6 py-3 flex justify-between items-center shadow-md relative z-20">
-        <div class="flex items-center space-x-2">
-            <i data-lucide="boxes" class="w-6 h-6"></i>
-            <span class="font-bold text-xl tracking-widest">GC-FL</span>
-        </div>
-        
-        <div class="relative ml-auto">
-            <button onclick="toggleDropdown()" class="flex items-center space-x-2 hover:text-gray-200 focus:outline-none transition-colors">
-                <span class="font-medium text-transform: uppercase">{{ user.username }}</span>
-                <i data-lucide="chevron-down" class="w-4 h-4"></i>
-            </button>
-            <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-100">
-                <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                    <i data-lucide="user" class="w-4 h-4 mr-2"></i> Perfil
-                </a>
-                <a href="{% url 'logout' %}" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                    <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Salir
-                </a>
+    <!-- ================= MENSAJES DEL SISTEMA ================= -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 bg-{% if message.tags == 'error' %}red{% else %}green{% endif %}-100 border border-{% if message.tags == 'error' %}red{% else %}green{% endif %}-400 text-{% if message.tags == 'error' %}red{% else %}green{% endif %}-700 px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline">{{ message }}</span>
             </div>
-        </div>
-    </nav>
+        {% endfor %}
+    {% endif %}
 
-    <main class="flex-1 p-8 max-w-7xl mx-auto w-full relative z-10">
-        
-        {% if messages %}
-            {% for message in messages %}
-                <div class="mb-4 bg-{% if message.tags == 'error' %}red{% else %}green{% endif %}-100 border border-{% if message.tags == 'error' %}red{% else %}green{% endif %}-400 text-{% if message.tags == 'error' %}red{% else %}green{% endif %}-700 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline">{{ message }}</span>
+    <!-- ================= CABECERA DE LA PÁGINA ================= -->
+    <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
+        <h1 class="text-2xl font-bold text-gray-800">Cuentas Corrientes</h1>
+        <a href="{% url 'dashboard' %}" class="text-sm text-blue-600 hover:underline">Volver al Panel Principal</a>
+    </div>
+
+    <!-- ================= TARJETA DE RESUMEN ================= -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 flex justify-between items-center border-l-4 border-l-orange-500">
+        <div>
+            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total de Dinero en crédito</p>
+            <p class="text-3xl font-black text-gray-800 mt-1">${{ total_credito }}</p>
+        </div>
+        <div class="p-3 bg-orange-50 rounded-full">
+            <i data-lucide="wallet" class="w-8 h-8 text-orange-500"></i>
+        </div>
+    </div>
+
+    <!-- ================= PANEL DE FILTROS ================= -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <form method="GET" action="{% url 'clientes:cuenta_corriente_list' %}">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Identificador</label>
+                    <input type="text" name="documento" value="{{ request.GET.documento }}" placeholder="Ej: 20123456789" class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
                 </div>
-            {% endfor %}
-        {% endif %}
-
-        <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
-            <h1 class="text-2xl font-bold text-gray-800">Cuentas Corrientes</h1>
-            <a href="{% url 'dashboard' %}" class="text-sm text-blue-600 hover:underline">Volver al Panel Principal</a>
-        </div>
-
-        <!-- Tarjeta de Resumen (El Toque Financiero) -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6 flex justify-between items-center border-l-4 border-l-orange-500">
-            <div>
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total de Dinero en crédito</p>
-                <p class="text-3xl font-black text-gray-800 mt-1">${{ total_credito }}</p>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nombre o Apellido</label>
+                    <input type="text" name="nombre" value="{{ request.GET.nombre }}" placeholder="Buscar por nombre..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
+                </div>
             </div>
-            <div class="p-3 bg-orange-50 rounded-full">
-                <i data-lucide="wallet" class="w-8 h-8 text-orange-500"></i>
+
+            <div class="flex flex-col sm:flex-row justify-between items-center pt-2 border-t border-gray-100 gap-4 sm:gap-0 mt-4">
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button type="submit" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex-1 sm:flex-none">
+                        Filtrar
+                    </button>
+                    <a href="{% url 'clientes:cuenta_corriente_list' %}" class="bg-gray-500 hover:bg-gray-600 text-white text-center font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex-1 sm:flex-none">
+                        Limpiar
+                    </a>
+                </div>
             </div>
-        </div>
+        </form>
+    </div>
 
-        <!-- Panel de Filtros y Acciones -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <form method="GET" action="{% url 'clientes:cuenta_corriente_list' %}">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Identificador</label>
-                        <input type="text" name="documento" value="{{ request.GET.documento }}" placeholder="Ej: 20123456789" class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nombre o Apellido</label>
-                        <input type="text" name="nombre" value="{{ request.GET.nombre }}" placeholder="Buscar por nombre..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                    </div>
-                </div>
-
-                <div class="flex flex-col sm:flex-row justify-between items-center pt-2 border-t border-gray-100 gap-4 sm:gap-0 mt-4">
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button type="submit" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex-1 sm:flex-none">
-                            Filtrar
-                        </button>
-                        <a href="{% url 'clientes:cuenta_corriente_list' %}" class="bg-gray-500 hover:bg-gray-600 text-white text-center font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex-1 sm:flex-none">
-                            Limpiar
-                        </a>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Tabla de Resultados -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div class="table-container">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 border-b border-gray-200">
-                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Identificador</th>
-                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Apellido, Nombre</th>
-                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Contacto</th>
-                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Saldo Actual</th>
-                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-sm text-gray-700 divide-y divide-gray-200">
+    <!-- ================= TABLA DE RESULTADOS ================= -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="table-container">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Identificador</th>
+                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Apellido, Nombre</th>
+                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Contacto</th>
+                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Saldo Actual</th>
+                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm text-gray-700 divide-y divide-gray-200">
+                    {% for cliente in page_obj %}
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-4 px-6 font-medium">{{ cliente.tipo_documento|default:"DNI" }} - {{ cliente.numero_documento|default:"-" }}</td>
+                        <td class="py-4 px-6 font-bold text-gray-900">{{ cliente.apellido }}, {{ cliente.nombre |default:"" }}</td>
                         
-                        {% for cliente in page_obj %}
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="py-4 px-6 font-medium">{{ cliente.tipo_documento|default:"DNI" }} - {{ cliente.numero_documento|default:"-" }}</td>
-                            <td class="py-4 px-6 font-bold text-gray-900">{{ cliente.apellido }}, {{ cliente.nombre |default:"" }}</td>
-                            
-                            <td class="py-4 px-6 hidden md:table-cell">
-                                <span class="block">{% if cliente.email %}{{ cliente.email }}{% else %}<span class="text-gray-400 italic">Sin correo</span>{% endif %}</span>
-                                <span class="text-xs text-gray-500">{% if cliente.telefono %}{{ cliente.telefono }}{% else %}Sin tel{% endif %}</span>
-                            </td>
-                            
-                            <td class="py-4 px-6 text-right">
-                                <span class="font-black text-lg {% if cliente.saldo_cuenta_corriente > 0 %}text-orange-600{% else %}text-green-600{% endif %}">
-                                    ${{ cliente.saldo_cuenta_corriente }}
-                                </span>
-                            </td>
-                            
-                            <td class="py-4 px-6 text-center">
-                                <a href="{% url 'clientes:cuenta_corriente_detalle' cliente.pk %}" class="inline-flex items-center bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition-colors text-xs font-bold shadow-sm">
-                                    <i data-lucide="dollar-sign" class="w-4 h-4 mr-1"></i> Administrar
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="py-8 text-center text-gray-500">No se encontraron clientes.</td>
-                        </tr>
-                        {% endfor %}
-
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Paginación Real de Django -->
-            {% if page_obj.has_other_pages %}
-            <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
-                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                        <p class="text-sm text-gray-700">
-                            Mostrando <span class="font-medium">{{ page_obj.start_index }}</span> a <span class="font-medium">{{ page_obj.end_index }}</span> de <span class="font-medium">{{ page_obj.paginator.count }}</span> resultados
-                        </p>
-                    </div>
-                    <div>
-                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                            {% if page_obj.has_previous %}
-                            <a href="?page={{ page_obj.previous_page_number }}&nombre={{ request.GET.nombre }}&documento={{ request.GET.documento }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Anterior</a>
-                            {% endif %}
-
-                            <span class="z-10 bg-[#2a4365] text-white relative inline-flex items-center px-4 py-2 border border-[#2a4365] text-sm font-medium">
-                                {{ page_obj.number }}
+                        <td class="py-4 px-6 hidden md:table-cell">
+                            <span class="block">{% if cliente.email %}{{ cliente.email }}{% else %}<span class="text-gray-400 italic">Sin correo</span>{% endif %}</span>
+                            <span class="text-xs text-gray-500">{% if cliente.telefono %}{{ cliente.telefono }}{% else %}Sin tel{% endif %}</span>
+                        </td>
+                        
+                        <td class="py-4 px-6 text-right">
+                            <span class="font-black text-lg {% if cliente.saldo_cuenta_corriente > 0 %}text-orange-600{% else %}text-green-600{% endif %}">
+                                ${{ cliente.saldo_cuenta_corriente }}
                             </span>
+                        </td>
+                        
+                        <td class="py-4 px-6 text-center">
+                            <a href="{% url 'clientes:cuenta_corriente_detalle' cliente.pk %}" class="inline-flex items-center bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 transition-colors text-xs font-bold shadow-sm">
+                                <i data-lucide="dollar-sign" class="w-4 h-4 mr-1"></i> Administrar
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-gray-500">No se encontraron clientes con deudas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- ================= PAGINACIÓN ================= -->
+        {% if page_obj.has_other_pages %}
+        <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Mostrando <span class="font-medium">{{ page_obj.start_index }}</span> a <span class="font-medium">{{ page_obj.end_index }}</span> de <span class="font-medium">{{ page_obj.paginator.count }}</span> resultados
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}&nombre={{ request.GET.nombre }}&documento={{ request.GET.documento }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Anterior</a>
+                        {% endif %}
 
-                            {% if page_obj.has_next %}
-                            <a href="?page={{ page_obj.next_page_number }}&nombre={{ request.GET.nombre }}&documento={{ request.GET.documento }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Siguiente</a>
-                            {% endif %}
-                        </nav>
-                    </div>
+                        <span class="z-10 bg-[#2a4365] text-white relative inline-flex items-center px-4 py-2 border border-[#2a4365] text-sm font-medium">
+                            {{ page_obj.number }}
+                        </span>
+
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&nombre={{ request.GET.nombre }}&documento={{ request.GET.documento }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Siguiente</a>
+                        {% endif %}
+                    </nav>
                 </div>
             </div>
-            {% endif %}
         </div>
-    </main>
-
-    <script>
-        lucide.createIcons();
-        function toggleDropdown() {
-            document.getElementById('userDropdown').classList.toggle('hidden');
-        }
-    </script>
-</body>
-</html>
+        {% endif %}
+    </div>
+{% endblock content %}

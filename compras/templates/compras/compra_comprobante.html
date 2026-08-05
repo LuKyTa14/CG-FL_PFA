@@ -5,6 +5,7 @@
     <title>Remito Ingreso #{{ compra.id|stringformat:"05d" }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* ================= ESTILOS DE IMPRESIÓN ================= */
         @media print {
             .no-print { display: none !important; }
             body { background-color: white !important; }
@@ -15,12 +16,13 @@
 
     <div class="max-w-3xl mx-auto bg-white p-10 shadow-lg border border-gray-300">
         
-        <!-- Botón de imprimir -->
-        <div class="text-right mb-8 no-print">
-            <button onclick="window.print()" class="bg-gray-800 text-white px-4 py-2 rounded shadow hover:bg-gray-700">Imprimir / PDF</button>
+        <!-- ================= BOTONES DE ACCIÓN ================= -->
+        <div class="text-right mb-8 no-print flex justify-end gap-3">
+            <a href="{% url 'compras:compras_list' %}" class="bg-gray-500 text-white px-4 py-2 rounded shadow hover:bg-gray-600 text-decoration-none font-bold">Volver</a>
+            <button onclick="window.print()" class="bg-[#2a4365] text-white px-4 py-2 rounded shadow hover:bg-[#1e324b] font-bold">Imprimir / PDF</button>
         </div>
 
-        <!-- Cabecera -->
+        <!-- ================= CABECERA DEL REMITO ================= -->
         <div class="flex justify-between items-start border-b-2 border-gray-800 pb-6 mb-6">
             <div>
                 <h1 class="text-3xl font-black tracking-widest text-[#2a4365]">GC-FL</h1>
@@ -33,7 +35,7 @@
             </div>
         </div>
 
-        <!-- Datos del Proveedor y Sucursal -->
+        <!-- ================= DATOS LOGÍSTICOS ================= -->
         <div class="flex justify-between mb-8">
             <div class="w-1/2 pr-4">
                 <h3 class="text-xs font-bold text-gray-500 uppercase mb-1">Datos del Proveedor</h3>
@@ -53,7 +55,7 @@
         </div>
         {% endif %}
 
-        <!-- Tabla de Productos -->
+        <!-- ================= TABLA DE PRODUCTOS ================= -->
         <table class="w-full text-left border-collapse mb-8">
             <thead>
                 <tr class="border-b-2 border-gray-800 text-sm">
@@ -77,7 +79,7 @@
             </tbody>
         </table>
 
-        <!-- Totales -->
+        <!-- ================= TOTALES FINALES ================= -->
         <div class="flex justify-end border-t-2 border-gray-800 pt-4">
             <div class="w-64">
                 <div class="flex justify-between items-center text-xl font-black">
@@ -88,6 +90,5 @@
         </div>
 
     </div>
-
 </body>
 </html>

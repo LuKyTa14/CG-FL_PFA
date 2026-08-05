@@ -1,180 +1,148 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario - GC-FL</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+{% extends 'core/base.html' %}
+
+{% block title %}Inventario - GC-FL{% endblock %}
+{% block nav_icon %}<i data-lucide="package" class="w-6 h-6"></i>{% endblock %}
+{% block nav_title %}| INVENTARIO{% endblock %}
+
+{% block content %}
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
         .table-container { overflow-x: auto; }
     </style>
-</head>
-<body class="min-h-screen flex flex-col">
 
-    <nav class="bg-[#2a4365] text-white px-6 py-3 flex justify-between items-center shadow-md relative z-20">
-        <div class="flex items-center space-x-2">
-            <i data-lucide="boxes" class="w-6 h-6"></i>
-            <span class="font-bold text-xl tracking-widest">GC-FL</span>
-        </div>
-        <div class="relative ml-auto">
-            <button onclick="toggleDropdown()" class="flex items-center space-x-2 hover:text-gray-200 focus:outline-none transition-colors">
-                <span class="font-medium text-transform: uppercase">{{ user.username }}</span>
-                <i data-lucide="chevron-down" class="w-4 h-4"></i>
-            </button>
-            <div id="userDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-100">
-                <a href="{% url 'logout' %}" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                    <i data-lucide="log-out" class="w-4 h-4 mr-2"></i> Salir
-                </a>
+    <!-- ================= MENSAJES DEL SISTEMA ================= -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 bg-{% if message.tags == 'error' %}red{% else %}green{% endif %}-100 border border-{% if message.tags == 'error' %}red{% else %}green{% endif %}-400 text-{% if message.tags == 'error' %}red{% else %}green{% endif %}-700 px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline">{{ message }}</span>
             </div>
-        </div>
-    </nav>
+        {% endfor %}
+    {% endif %}
 
-    <main class="flex-1 p-8 max-w-7xl mx-auto w-full relative z-10">
-        
-        {% if messages %}
-            {% for message in messages %}
-                <div class="mb-4 bg-{% if message.tags == 'error' %}red{% else %}green{% endif %}-100 border border-{% if message.tags == 'error' %}red{% else %}green{% endif %}-400 text-{% if message.tags == 'error' %}red{% else %}green{% endif %}-700 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline">{{ message }}</span>
+    <!-- ================= CABECERA DE LA PÁGINA ================= -->
+    <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
+        <h1 class="text-2xl font-bold text-gray-800">Inventario / Catálogo</h1>
+        <a href="{% url 'dashboard' %}" class="text-sm text-blue-600 hover:underline">Volver al Panel Principal</a>
+    </div>
+
+    <!-- ================= PANEL DE FILTROS ================= -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <form method="GET" action="{% url 'inventario:productos_list' %}">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Código o SKU</label>
+                    <input type="text" name="codigo" value="{{ request.GET.codigo }}" placeholder="Buscar por código..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
                 </div>
-            {% endfor %}
-        {% endif %}
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Marca</label>
+                    <input type="text" name="marca" value="{{ request.GET.marca }}" placeholder="Ej: Samsung, LG..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nombre o Categoría</label>
+                    <input type="text" name="nombre" value="{{ request.GET.nombre }}" placeholder="Ej: Smart TV..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
+                </div>
+            </div>
 
-        <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
-            <h1 class="text-2xl font-bold text-gray-800">Inventario / Catálogo</h1>
-            <a href="{% url 'dashboard' %}" class="text-sm text-blue-600 hover:underline">Volver al Panel Principal</a>
-        </div>
-
-        <!-- Panel de Filtros -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <form method="GET" action="{% url 'inventario:productos_list' %}">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Código o SKU</label>
-                        <input type="text" name="codigo" value="{{ request.GET.codigo }}" placeholder="Buscar por código..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Marca</label>
-                        <input type="text" name="marca" value="{{ request.GET.marca }}" placeholder="Ej: Samsung, LG..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nombre o Categoría</label>
-                        <input type="text" name="nombre" value="{{ request.GET.nombre }}" placeholder="Ej: Smart TV..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                    </div>
+            <div class="flex flex-col sm:flex-row justify-between items-center pt-2 border-t border-gray-100 gap-4 sm:gap-0 mt-4">
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <button type="submit" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex-1 sm:flex-none">
+                        Filtrar
+                    </button>
+                    <a href="{% url 'inventario:productos_list' %}" class="bg-gray-500 hover:bg-gray-600 text-white text-center font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex-1 sm:flex-none">
+                        Limpiar
+                    </a>
                 </div>
 
-                <div class="flex flex-col sm:flex-row justify-between items-center pt-2 border-t border-gray-100 gap-4 sm:gap-0 mt-4">
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button type="submit" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex-1 sm:flex-none">
-                            Filtrar
-                        </button>
-                        <a href="{% url 'inventario:productos_list' %}" class="bg-gray-500 hover:bg-gray-600 text-white text-center font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex-1 sm:flex-none">
-                            Limpiar
-                        </a>
-                    </div>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <a href="?export=csv&codigo={{ request.GET.codigo }}&marca={{ request.GET.marca }}&nombre={{ request.GET.nombre }}" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex items-center justify-center flex-1 sm:flex-none">
+                        <i data-lucide="download" class="w-4 h-4 mr-2"></i> Exportar CSV
+                    </a>
+                    {% if max_permission >= 2 %}
+                    <a href="{% url 'inventario:producto_create' %}" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex items-center justify-center flex-1 sm:flex-none">
+                        <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nuevo Producto
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
 
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <a href="?export=csv&codigo={{ request.GET.codigo }}&marca={{ request.GET.marca }}&nombre={{ request.GET.nombre }}" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex items-center justify-center flex-1 sm:flex-none">
-                            <i data-lucide="download" class="w-4 h-4 mr-2"></i> Exportar CSV
-                        </a>
+    <!-- ================= TABLA DE RESULTADOS ================= -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="table-container">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Código</th>
+                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
+                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Precio (Venta)</th>
+                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Stock General</th>
                         {% if max_permission >= 2 %}
-                        <a href="{% url 'inventario:producto_create' %}" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex items-center justify-center flex-1 sm:flex-none">
-                            <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nuevo Producto
-                        </a>
+                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Acciones</th>
                         {% endif %}
-                    </div>
-                </div>
-            </form>
+                    </tr>
+                </thead>
+                <tbody class="text-sm text-gray-700 divide-y divide-gray-200">
+                    {% for prod in page_obj %}
+                    <tr class="hover:bg-gray-50 transition-colors {% if not prod.activo %}opacity-60{% endif %}">
+                        <td class="py-4 px-6 font-medium text-gray-900">{{ prod.codigo }}</td>
+                        <td class="py-4 px-6">
+                            <span class="block font-bold text-gray-900">
+                                {{ prod.nombre }} <span class="font-normal text-gray-500">({{ prod.marca }})</span>
+                            </span>
+                            <div class="mt-1 flex items-center gap-1">
+                                <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{{ prod.categoria|default:"Sin categoría" }}</span>
+                                {% if not prod.activo %}<span class="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded">Inactivo</span>{% endif %}
+                            </div>
+                        </td>
+                        <td class="py-4 px-6 hidden md:table-cell">
+                            <span class="block font-bold text-green-700">${{ prod.precio_venta }}</span>
+                            <span class="text-xs text-gray-500">Costo: ${{ prod.precio_costo }}</span>
+                        </td>
+                        <td class="py-4 px-6 text-center">
+                            <span class="text-lg font-bold {% if prod.stock_general > 0 %}text-green-600{% else %}text-red-500{% endif %}">
+                                {{ prod.stock_general }}
+                            </span>
+                        </td>
+                        {% if max_permission >= 2 %}
+                        <td class="py-4 px-6 text-center">
+                            <div class="flex items-center justify-center space-x-3">
+                                <a href="{% url 'inventario:producto_edit' prod.pk %}" class="text-blue-600 hover:text-blue-800 transition-colors" title="Editar Producto"><i data-lucide="pencil" class="w-5 h-5"></i></a>
+                                <a href="{% url 'inventario:stock_update' prod.pk %}" class="text-green-600 hover:text-green-800 transition-colors" title="Ajustar Stock Físico"><i data-lucide="package-plus" class="w-5 h-5"></i></a>
+                                <a href="{% url 'inventario:historial_precios' prod.pk %}" class="text-purple-600 hover:text-purple-800 transition-colors" title="Ver Historial"><i data-lucide="history" class="w-5 h-5"></i></a>
+                                <form method="POST" action="{% url 'inventario:producto_delete' prod.pk %}" onsubmit="return confirm('¿Eliminar producto del catálogo?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-red-500 hover:text-red-700 transition-colors" title="Eliminar"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="py-8 text-center text-gray-500">No se encontraron productos.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-
-        <!-- Tabla de Inventario -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div class="table-container">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 border-b border-gray-200">
-                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Código</th>
-                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
-                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Precio (Venta)</th>
-                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Stock General</th>
-                            {% if max_permission >= 2 %}
-                            <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Acciones</th>
-                            {% endif %}
-                        </tr>
-                    </thead>
-                    <tbody class="text-sm text-gray-700 divide-y divide-gray-200">
-                        {% for prod in page_obj %}
-                        <tr class="hover:bg-gray-50 transition-colors {% if not prod.activo %}opacity-60{% endif %}">
-                            <td class="py-4 px-6 font-medium text-gray-900">{{ prod.codigo }}</td>
-                            <td class="py-4 px-6">
-                                <!-- AQUÍ ESTÁ EL CAMBIO VISUAL -->
-                                <span class="block font-bold text-gray-900">
-                                    {{ prod.nombre }} <span class="font-normal text-gray-500">({{ prod.marca }})</span>
-                                </span>
-                                <div class="mt-1 flex items-center gap-1">
-                                    <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{{ prod.categoria|default:"Sin categoría" }}</span>
-                                    {% if not prod.activo %}<span class="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded">Inactivo</span>{% endif %}
-                                </div>
-                            </td>
-                            <td class="py-4 px-6 hidden md:table-cell">
-                                <span class="block font-bold text-green-700">${{ prod.precio_venta }}</span>
-                                <span class="text-xs text-gray-500">Costo: ${{ prod.precio_costo }}</span>
-                            </td>
-                            <td class="py-4 px-6 text-center">
-                                <span class="text-lg font-bold {% if prod.stock_general > 0 %}text-green-600{% else %}text-red-500{% endif %}">
-                                    {{ prod.stock_general }}
-                                </span>
-                            </td>
-                            {% if max_permission >= 2 %}
-                            <td class="py-4 px-6 text-center">
-                                <!-- Botones de acción igual que antes... -->
-                                <div class="flex items-center justify-center space-x-3">
-                                    <a href="{% url 'inventario:producto_edit' prod.pk %}" class="text-blue-600 hover:text-blue-800 transition-colors" title="Editar Producto"><i data-lucide="pencil" class="w-5 h-5"></i></a>
-                                    <a href="{% url 'inventario:stock_update' prod.pk %}" class="text-green-600 hover:text-green-800 transition-colors" title="Ajustar Stock Físico"><i data-lucide="package-plus" class="w-5 h-5"></i></a>
-                                    <a href="{% url 'inventario:historial_precios' prod.pk %}" class="text-purple-600 hover:text-purple-800 transition-colors" title="Ver Historial"><i data-lucide="history" class="w-5 h-5"></i></a>
-                                    <form method="POST" action="{% url 'inventario:producto_delete' prod.pk %}" onsubmit="return confirm('¿Eliminar producto del catálogo?');">
-                                        {% csrf_token %}
-                                        <button type="submit" class="text-red-500 hover:text-red-700 transition-colors" title="Eliminar"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                                    </form>
-                                </div>
-                            </td>
-                            {% endif %}
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="5" class="py-8 text-center text-gray-500">No se encontraron productos.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            
-            {% if page_obj.has_other_pages %}
-            <!-- Paginación va aquí (Misma que usamos en clientes) -->
-            <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
-                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                        <p class="text-sm text-gray-700">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</p>
-                    </div>
-                    <div>
-                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                            {% if page_obj.has_previous %}
-                            <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Anterior</a>
-                            {% endif %}
-                            {% if page_obj.has_next %}
-                            <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Siguiente</a>
-                            {% endif %}
-                        </nav>
-                    </div>
+        
+        <!-- ================= PAGINACIÓN ================= -->
+        {% if page_obj.has_other_pages %}
+        <div class="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Anterior</a>
+                        {% endif %}
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Siguiente</a>
+                        {% endif %}
+                    </nav>
                 </div>
             </div>
-            {% endif %}
         </div>
-    </main>
-
-    <script>
-        lucide.createIcons();
-        function toggleDropdown() { document.getElementById('userDropdown').classList.toggle('hidden'); }
-    </script>
-</body>
-</html>
+        {% endif %}
+    </div>
+{% endblock content %}
