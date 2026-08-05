@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from decimal import Decimal
+from core.models import Sucursal
 
 class Cliente(models.Model):
     TIPO_DOCUMENTO_CHOICES = [
@@ -47,6 +48,14 @@ class MovimientoCuentaCorriente(models.Model):
         ('DEUDA', 'Deuda por Venta'),
         ('PAGO', 'Entrega a Cuenta'),
     ]
+    # Declaramos las opciones para romper la dependencia circular
+    METODOS_PAGO = [
+        ('EFECTIVO', 'Efectivo'),
+        ('DEBITO', 'Tarjeta de Débito'),
+        ('CREDITO', 'Tarjeta de Crédito'),
+        ('TRANSFERENCIA', 'Transferencia'),
+        ('MERCADO_PAGO_QR', 'Mercado Pago / QR'),
+    ]
     
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='movimientos')
     cajero = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
@@ -54,6 +63,9 @@ class MovimientoCuentaCorriente(models.Model):
     tipo = models.CharField(max_length=10, choices=TIPO_MOVIMIENTO)
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     descripcion = models.CharField(max_length=255)
+
+    sucursal = models.ForeignKey(Sucursal, on_delete=models.SET_NULL, null=True, blank=True)
+    metodo_pago = models.CharField(max_length=50, choices=METODOS_PAGO, default='EFECTIVO')
     
-    def __str__(self):
+def __str__(self):
         return f"{self.fecha.strftime('%d/%m/%Y')} - {self.cliente}: {self.tipo} (${self.monto})"

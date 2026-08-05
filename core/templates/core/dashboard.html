@@ -129,7 +129,7 @@
             {% endif %}
 
             {% if permissions.contabilidad > 0 %}
-            <a href="#" class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
+            <a href="{% url 'contabilidad:dashboard_contabilidad' %}" class="module-card bg-white rounded-xl p-6 flex flex-col items-center justify-center text-center shadow-sm border border-gray-100 transition-all duration-300">
                 <i data-lucide="file-text" class="w-10 h-10 text-teal-500 mb-3 stroke-[1.5]"></i>
                 <h2 class="font-semibold text-gray-800">Contabilidad</h2>
                 <p class="text-xs text-gray-400 mt-1">{% if permissions.contabilidad == 1 %}Solo Lectura{% else %}Control Total{% endif %}</p>

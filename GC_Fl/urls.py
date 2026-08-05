@@ -28,4 +28,5 @@ urlpatterns = [
     path('inventario/', include('inventario.urls', namespace='inventario')),
     path('compras/', include('compras.urls', namespace='compras')),
     path('ventas/', include('ventas.urls', namespace='ventas')),
+    path('contabilidad/', include('contabilidad.urls', namespace='contabilidad')),
 ]

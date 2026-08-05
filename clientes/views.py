@@ -227,7 +227,9 @@ def cuenta_corriente_detalle(request, pk):
                         tipo='PAGO',
                         monto=monto,
                         descripcion=descripcion_completa,
-                        cajero=request.user
+                        cajero=request.user,
+                        sucursal_id=sucursal_id,
+                        metodo_pago=metodo_pago_key 
                     )
                     
                     cliente.saldo_cuenta_corriente -= monto
