@@ -17,10 +17,19 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('', RedirectView.as_view(url='login/', permanent=False), name='index'),
     path('admin/', admin.site.urls),
+
+    # RUTAS DE RECUPERACION DE CONTRASEÑA
+    path('reset_password/', auth_views.PasswordResetView.as_view( template_name="users/password_reset_form.html"), name="reset_password"),
+    path('reset_password_sent/', auth_views.PasswordResetDoneView.as_view(template_name="users/password_reset_done.html"), name="password_reset_done"),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name="users/password_reset_confirm.html"), name="password_reset_confirm"),
+    path('reset_password_complete/', auth_views.PasswordResetCompleteView.as_view(template_name="users/password_reset_complete.html"), name="password_reset_complete"),
+
+    # APLICACIONES (INCLUDES)
     path('', include('users.urls')), 
     path('', include('core.urls')),
     path('clientes/', include('clientes.urls', namespace='clientes')),

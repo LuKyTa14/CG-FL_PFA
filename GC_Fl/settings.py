@@ -129,3 +129,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+
+# En desarrollo, los correos de recuperación de contraseña se imprimiran en la consola
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

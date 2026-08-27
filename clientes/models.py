@@ -30,8 +30,8 @@ class Cliente(models.Model):
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
     # --- CAMPO PARA LA CUENTA CORRIENTE 
-    # Saldo positivo significa que el cliente debe plata. Saldo negativo o cero, esta al dia.
-    saldo_cuenta_corriente = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    # Saldo positivo significa que el cliente debe plata. Saldo cero, esta al dia.
+    saldo_cuenta_corriente = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'), blank=True, null=True)
 
     class Meta:
         db_table = 'clientes'

@@ -19,3 +19,8 @@ class LoginForm(AuthenticationForm):
     )
     # Clase Meta no necesaria
     # AuthenticationForm sabe como procesar el login
+
+class PerfilForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email']

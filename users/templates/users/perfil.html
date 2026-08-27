@@ -1,0 +1,124 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Mi Perfil - GC-FL{% endblock %}
+{% block nav_icon %}<i data-lucide="user-cog" class="w-6 h-6"></i>{% endblock %}
+{% block nav_title %}| MI PERFIL{% endblock %}
+
+{% block content %}
+    <!-- ================= CABECERA DE LA PÁGINA ================= -->
+    <div class="mb-6 border-b border-gray-300 pb-2 flex justify-between items-end">
+        <h1 class="text-2xl font-bold text-gray-800">Administración de Perfil</h1>
+        <a href="{% url 'dashboard' %}" class="text-sm text-blue-600 hover:underline">Volver al Panel Principal</a>
+    </div>
+
+    <!-- Bloque de mensajes de éxito -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative flex items-center gap-2 shadow-sm" role="alert">
+                <i data-lucide="check-circle" class="w-5 h-5"></i>
+                <span class="block sm:inline font-medium">{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- ================= SECCIÓN PRINCIPAL ================= -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- COLUMNA IZQUIERDA: FORMULARIO EDITABLE -->
+        <div class="lg:col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 p-6 self-start border-t-4 border-t-[#2a4365]">
+            
+            <!-- Info estática del usuario -->
+            <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-100">
+                <div class="w-16 h-16 bg-[#2a4365] rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-sm">
+                    {{ usuario.username|make_list|first|upper }}
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-bold uppercase tracking-wider mb-1">Usuario</p>
+                    <p class="text-lg text-gray-900 font-black uppercase leading-none">{{ usuario.username }}</p>
+                    <span class="inline-block mt-2 bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full border border-blue-100">
+                        Rol: {{ rol }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Formulario de actualización -->
+            <form method="POST" class="space-y-5">
+                {% csrf_token %}
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Nombre</label>
+                    <input type="text" name="first_name" value="{{ form.first_name.value|default:'' }}" 
+                           class="w-full border-2 border-gray-100 rounded-lg py-2.5 px-3 text-gray-700 font-medium focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365] transition-colors bg-gray-50 focus:bg-white"
+                           placeholder="Tu nombre">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Apellido</label>
+                    <input type="text" name="last_name" value="{{ form.last_name.value|default:'' }}" 
+                           class="w-full border-2 border-gray-100 rounded-lg py-2.5 px-3 text-gray-700 font-medium focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365] transition-colors bg-gray-50 focus:bg-white"
+                           placeholder="Tu apellido">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Correo Electrónico</label>
+                    <input type="email" name="email" value="{{ form.email.value|default:'' }}" 
+                           class="w-full border-2 border-gray-100 rounded-lg py-2.5 px-3 text-gray-700 font-medium focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365] transition-colors bg-gray-50 focus:bg-white"
+                           placeholder="tucorreo@empresa.com">
+                </div>
+
+                <div class="pt-5 mt-2 border-t border-gray-100">
+                    <button type="submit" class="w-full bg-[#2a4365] hover:bg-[#1e324b] text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-sm mb-3 flex justify-center items-center gap-2">
+                        <i data-lucide="save" class="w-5 h-5"></i> GUARDAR CAMBIOS
+                    </button>
+                    
+                    <a href="{% url 'reset_password' %}" class="w-full flex justify-center items-center gap-2 bg-white hover:bg-gray-50 text-gray-600 font-semibold py-2.5 px-4 rounded-lg transition-colors border-2 border-gray-200 text-sm">
+                        <i data-lucide="key-round" class="w-4 h-4"></i> Cambiar contraseña
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- COLUMNA DERECHA: INFO DE LA EMPRESA (Solo lectura) -->
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6 border-t-4 border-t-blue-400">
+            <div class="flex items-center gap-2 mb-6 border-b border-gray-100 pb-3">
+                <i data-lucide="store" class="w-6 h-6 text-blue-500"></i>
+                <h3 class="text-xl font-bold text-gray-800">Estructura del Negocio</h3>
+            </div>
+            
+            <p class="text-sm text-gray-500 mb-6 font-medium">Información global de las sucursales y puntos de venta registrados en el sistema.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {% for sucursal in sucursales %}
+                <div class="border-2 border-gray-100 rounded-xl p-5 hover:border-blue-200 transition-colors bg-white relative overflow-hidden shadow-sm group">
+                    {% if sucursal.es_principal %}
+                        <div class="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-[10px] font-black tracking-wider px-3 py-1 rounded-bl-lg">CASA CENTRAL</div>
+                    {% endif %}
+                    
+                    <h4 class="font-black text-lg text-gray-800 mb-1 group-hover:text-blue-600 transition-colors">{{ sucursal.nombre }}</h4>
+                    
+                    <div class="space-y-3 mt-4">
+                        <div class="flex items-start gap-3 text-sm text-gray-600">
+                            <div class="bg-gray-50 p-1.5 rounded-md">
+                                <i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i>
+                            </div>
+                            <span class="font-medium mt-1">{{ sucursal.direccion|default:"Dirección no especificada" }}</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-sm text-gray-600">
+                            <div class="bg-gray-50 p-1.5 rounded-md">
+                                <i data-lucide="phone" class="w-4 h-4 text-gray-400"></i>
+                            </div>
+                            <span class="font-medium">{{ sucursal.telefono|default:"Sin teléfono" }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-span-full bg-gray-50 rounded-xl border border-dashed border-gray-300 text-center py-12 flex flex-col items-center">
+                    <i data-lucide="store-off" class="w-12 h-12 text-gray-300 mb-3"></i>
+                    <p class="text-gray-500 font-medium">No hay sucursales registradas en el sistema todavía.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+{% endblock content %}
