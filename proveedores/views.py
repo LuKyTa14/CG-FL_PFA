@@ -12,7 +12,7 @@ from users.models import UserRole
 
 @login_required
 def proveedores_list(request):
-    # Validación de Permisos (Buscamos en role__proveedores)
+    # VALIDACIÓN DE PERMISOS
     max_permission = UserRole.objects.filter(user_id=request.user).aggregate(
         max_permission=models.Max('role__proveedores')
     )['max_permission'] or 0
@@ -21,37 +21,48 @@ def proveedores_list(request):
         messages.error(request, 'No tienes acceso al módulo de Proveedores.')
         return redirect('dashboard')
 
-    proveedores_list = Proveedor.objects.all()
+    # LÓGICA BASE Y BUSCADOR INTELIGENTE
+    proveedores = Proveedor.objects.all()
 
-    # Filtros
-    nombre = request.GET.get('nombre')
-    documento = request.GET.get('documento')
-    rubro = request.GET.get('rubro') # Sumamos el rubro como filtro
+    criterio = request.GET.get('criterio', 'nombre')
+    q = request.GET.get('q', '').strip()
+    orden = request.GET.get('orden', 'az')
 
-    if nombre:
-        proveedores_list = proveedores_list.filter(
-            models.Q(nombre__icontains=nombre) | models.Q(apellido__icontains=nombre)
-        )
-    if documento:
-        proveedores_list = proveedores_list.filter(numero_documento__icontains=documento)
-    if rubro:
-        proveedores_list = proveedores_list.filter(rubro__icontains=rubro)
+    # Aplicar filtro inteligente
+    if q:
+        if criterio == 'nombre':
+            proveedores = proveedores.filter(models.Q(nombre__icontains=q) | models.Q(apellido__icontains=q))
+        elif criterio == 'documento':
+            proveedores = proveedores.filter(numero_documento__icontains=q)
+        elif criterio == 'rubro':
+            proveedores = proveedores.filter(rubro__icontains=q)
+        elif criterio == 'ubicacion':
+            proveedores = proveedores.filter(models.Q(provincia__icontains=q) | models.Q(localidad__icontains=q))
 
-    # Exportación a CSV (Con los campos nuevos)
+    # Aplicar ordenamiento
+    orden_opciones = {
+        'az': ['nombre', 'apellido'],
+        'za': ['-nombre', '-apellido'],
+        'recientes': ['-fecha_registro'],
+        'antiguos': ['fecha_registro'],
+    }
+    orden_db = orden_opciones.get(orden, ['nombre', 'apellido'])
+    proveedores = proveedores.order_by(*orden_db)
+
+    # EXPORTACIÓN A CSV
     if request.GET.get('export') == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="proveedores.csv"'
         response.write('\ufeff'.encode('utf-8'))
         writer = csv.writer(response)
 
-        # Encabezados actualizados
         writer.writerow([
             'Nombre', 'Apellido', 'Rubro', 'Tipo Doc', 'Documento', 
             'CBU/Alias', 'Provincia', 'Localidad', 
             'Teléfono', 'Email', 'Fecha Alta'
         ])
 
-        for prov in proveedores_list:
+        for prov in proveedores:
             writer.writerow([
                 prov.nombre,
                 prov.apellido or '',
@@ -67,14 +78,19 @@ def proveedores_list(request):
             ])
         return response
 
-    # Paginación
-    paginator = Paginator(proveedores_list, 10)
+    # PAGINACIÓN Y CONTEXTO
+    paginator = Paginator(proveedores, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     context = {
         'page_obj': page_obj,
         'max_permission': max_permission,
+        
+        # Devolvemos esto para que la barra de búsqueda se mantenga al recargar
+        'criterio_actual': criterio,
+        'q_actual': q,
+        'orden_actual': orden,
     }
 
     return render(request, 'proveedores/proveedores_list.html', context)

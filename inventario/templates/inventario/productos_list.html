@@ -24,41 +24,59 @@
         <a href="{% url 'dashboard' %}" class="text-sm text-blue-600 hover:underline">Volver al Panel Principal</a>
     </div>
 
-    <!-- ================= PANEL DE FILTROS ================= -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <!-- ================= PANEL DE FILTROS Y ACCIONES ================= -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <form method="GET" action="{% url 'inventario:productos_list' %}">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Código o SKU</label>
-                    <input type="text" name="codigo" value="{{ request.GET.codigo }}" placeholder="Buscar por código..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Marca</label>
-                    <input type="text" name="marca" value="{{ request.GET.marca }}" placeholder="Ej: Samsung, LG..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Nombre o Categoría</label>
-                    <input type="text" name="nombre" value="{{ request.GET.nombre }}" placeholder="Ej: Smart TV..." class="w-full border border-gray-300 rounded-md py-2 px-3 text-sm focus:outline-none focus:border-[#2a4365] focus:ring-1 focus:ring-[#2a4365]">
-                </div>
-            </div>
+            <div class="flex flex-col lg:flex-row gap-4 justify-between items-center">
+                
+                <!-- Buscador y Ordenamiento (Izquierda) -->
+                <div class="flex flex-col md:flex-row gap-2 w-full lg:w-auto">
+                    <!-- Select de Criterio + Input (Unidos) -->
+                    <div class="flex flex-1 rounded-md shadow-sm">
+                        <select name="criterio" class="bg-gray-50 border border-gray-300 text-gray-700 py-2 px-3 rounded-l-md focus:outline-none focus:ring-1 focus:ring-[#2a4365] focus:border-[#2a4365] text-sm font-medium border-r-0">
+                            <option value="nombre" {% if criterio_actual == 'nombre' %}selected{% endif %}>Nombre</option>
+                            <option value="codigo" {% if criterio_actual == 'codigo' %}selected{% endif %}>Código</option>
+                            <option value="marca" {% if criterio_actual == 'marca' %}selected{% endif %}>Marca</option>
+                            <option value="categoria" {% if criterio_actual == 'categoria' %}selected{% endif %}>Categoría</option>
+                        </select>
+                        
+                        <input type="text" name="q" value="{{ q_actual }}" placeholder="Escriba aqui ..." 
+                            class="flex-1 w-full md:w-64 border border-gray-300 py-2 px-4 focus:outline-none focus:ring-1 focus:ring-[#2a4365] focus:border-[#2a4365] text-sm z-10 relative">
+                    </div>
 
-            <div class="flex flex-col sm:flex-row justify-between items-center pt-2 border-t border-gray-100 gap-4 sm:gap-0 mt-4">
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <button type="submit" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex-1 sm:flex-none">
-                        Filtrar
-                    </button>
-                    <a href="{% url 'inventario:productos_list' %}" class="bg-gray-500 hover:bg-gray-600 text-white text-center font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex-1 sm:flex-none">
-                        Limpiar
-                    </a>
+                    <!-- Select de Ordenamiento -->
+                    <div class="w-full md:w-48">
+                        <select name="orden" class="w-full border border-gray-300 text-gray-700 py-2 px-3 rounded-md focus:outline-none focus:ring-1 focus:ring-[#2a4365] focus:border-[#2a4365] text-sm font-medium">
+                            <option value="az" {% if orden_actual == 'az' %}selected{% endif %}>Alfabético (A-Z)</option>
+                            <option value="za" {% if orden_actual == 'za' %}selected{% endif %}>Alfabético (Z-A)</option>
+                            <option value="recientes" {% if orden_actual == 'recientes' %}selected{% endif %}>Más recientes</option>
+                            <option value="antiguos" {% if orden_actual == 'antiguos' %}selected{% endif %}>Más antiguos</option>
+                        </select>
+                    </div>
+
+                    <!-- Botones de Búsqueda -->
+                    <div class="flex gap-2 w-full md:w-auto">
+                        <button type="submit" class="bg-[#2a4365] hover:bg-[#1e324b] text-white px-4 py-2 rounded-md font-semibold text-sm transition-colors flex justify-center items-center shadow-sm flex-1 md:flex-none">
+                            <i data-lucide="search" class="w-4 h-4 mr-2"></i> Buscar
+                        </button>
+                        
+                        {% if q_actual or criterio_actual != 'nombre' or orden_actual != 'az' %}
+                            <a href="{% url 'inventario:productos_list' %}" title="Limpiar filtros" class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-md transition-colors flex justify-center items-center border border-gray-200">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
 
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <a href="?export=csv&codigo={{ request.GET.codigo }}&marca={{ request.GET.marca }}&nombre={{ request.GET.nombre }}" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex items-center justify-center flex-1 sm:flex-none">
+                <!-- Botones de Acción (Derecha) -->
+                <div class="flex gap-2 w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 border-gray-100">
+                    <!-- Exportar CSV ahora lleva los parámetros nuevos -->
+                    <a href="?export=csv&criterio={{ criterio_actual }}&q={{ q_actual }}&orden={{ orden_actual }}" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex items-center justify-center flex-1 lg:flex-none">
                         <i data-lucide="download" class="w-4 h-4 mr-2"></i> Exportar CSV
                     </a>
                     {% if max_permission >= 2 %}
-                    <a href="{% url 'inventario:producto_create' %}" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex items-center justify-center flex-1 sm:flex-none">
-                        <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nuevo Producto
+                    <a href="{% url 'inventario:producto_create' %}" class="bg-[#2a4365] hover:bg-[#1e324b] text-white font-medium py-2 px-4 rounded-md text-sm transition-colors shadow-sm flex items-center justify-center flex-1 lg:flex-none">
+                        <i data-lucide="plus" class="w-4 h-4 mr-2"></i> Nuevo
                     </a>
                     {% endif %}
                 </div>
@@ -72,7 +90,8 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gray-50 border-b border-gray-200">
-                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Código</th>
+                        <!-- Ampliamos el ancho de la columna a w-40 -->
+                        <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider w-40">Código</th>
                         <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">Producto</th>
                         <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Precio (Venta)</th>
                         <th class="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">Stock General</th>
@@ -84,16 +103,33 @@
                 <tbody class="text-sm text-gray-700 divide-y divide-gray-200">
                     {% for prod in page_obj %}
                     <tr class="hover:bg-gray-50 transition-colors {% if not prod.activo %}opacity-60{% endif %}">
-                        <td class="py-4 px-6 font-medium text-gray-900">{{ prod.codigo }}</td>
+                        <!-- Código más claro (text-gray-500) -->
+                        <td class="py-4 px-6 font-medium text-gray-500">{{ prod.codigo }}</td>
+                        
                         <td class="py-4 px-6">
-                            <span class="block font-bold text-gray-900">
-                                {{ prod.nombre }} <span class="font-normal text-gray-500">({{ prod.marca }})</span>
-                            </span>
-                            <div class="mt-1 flex items-center gap-1">
-                                <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{{ prod.categoria|default:"Sin categoría" }}</span>
-                                {% if not prod.activo %}<span class="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded">Inactivo</span>{% endif %}
+                            <!-- Nombre más chico (text-sm) y menos negro (text-gray-800) -->
+                            <div class="font-semibold text-gray-900 text-sm mb-1.5">
+                                {{ prod.nombre }}
+                            </div>
+                            
+                            <!-- Contenedor de Marca y Categoría -->
+                            <div class="flex items-center text-xs flex-wrap gap-2">
+                                <!-- Marca con el fondito azul que resaltaba antes -->
+                                <span class="font-semibold text-[#2a4365] bg-[#2a4365]/10 px-2 py-0.5 rounded tracking-wide uppercase">
+                                    {{ prod.marca|default:"Sin marca" }}
+                                </span>
+                                
+                                <!-- Categoría sutil en gris -->
+                                <span class="text-gray-500 font-medium">
+                                    {{ prod.categoria|default:"Sin categoría" }}
+                                </span>
+                                
+                                {% if not prod.activo %}
+                                    <span class="text-[10px] font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded uppercase tracking-wider border border-red-100">Inactivo</span>
+                                {% endif %}
                             </div>
                         </td>
+                        
                         <td class="py-4 px-6 hidden md:table-cell">
                             <span class="block font-bold text-green-700">${{ prod.precio_venta }}</span>
                             <span class="text-xs text-gray-500">Costo: ${{ prod.precio_costo }}</span>
@@ -134,10 +170,11 @@
                 <div>
                     <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                         {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Anterior</a>
+                        <!-- Nota: agregamos los parámetros de búsqueda a la URL de paginación para no perderlos -->
+                        <a href="?page={{ page_obj.previous_page_number }}&q={{ q_actual }}&criterio={{ criterio_actual }}&orden={{ orden_actual }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Anterior</a>
                         {% endif %}
                         {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Siguiente</a>
+                        <a href="?page={{ page_obj.next_page_number }}&q={{ q_actual }}&criterio={{ criterio_actual }}&orden={{ orden_actual }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Siguiente</a>
                         {% endif %}
                     </nav>
                 </div>

@@ -13,7 +13,7 @@ from users.models import UserRole
 
 @login_required
 def productos_list(request):
-    # Validacion de permisos para el modulo inventario
+    # VALIDACIÓN DE PERMISOS
     max_permission = UserRole.objects.filter(user_id=request.user).aggregate(
         max_permission=models.Max('role__inventario')
     )['max_permission'] or 0
@@ -22,21 +22,35 @@ def productos_list(request):
         messages.error(request, 'No tienes acceso al módulo de Inventario.')
         return redirect('dashboard')
 
+    # LOGICA BASE Y BUSCADOR INTELIGENTE
     productos = Producto.objects.all()
 
-    # Filtros de búsqueda
-    codigo = request.GET.get('codigo')
-    nombre = request.GET.get('nombre')
-    marca = request.GET.get('marca')
+    criterio = request.GET.get('criterio', 'nombre')
+    q = request.GET.get('q', '').strip()
+    orden = request.GET.get('orden', 'az')
 
-    if codigo:
-        productos = productos.filter(codigo__icontains=codigo)
-    if nombre:
-        productos = productos.filter(models.Q(nombre__icontains=nombre) | models.Q(categoria__icontains=nombre))
-    if marca:
-        productos = productos.filter(marca__icontains=marca)
+    # Aplicar filtro si el usuario escribió algo
+    if q:
+        if criterio == 'codigo':
+            productos = productos.filter(codigo__icontains=q)
+        elif criterio == 'nombre':
+            productos = productos.filter(nombre__icontains=q)
+        elif criterio == 'marca':
+            productos = productos.filter(marca__icontains=q)
+        elif criterio == 'categoria':
+            productos = productos.filter(categoria__icontains=q) # Ajustado a tu modelo original
 
-    # Exportacion a CSV
+    # Aplicar ordenamiento
+    orden_opciones = {
+        'az': 'nombre',
+        'za': '-nombre',
+        'recientes': '-id',
+        'antiguos': 'id',
+    }
+    orden_db = orden_opciones.get(orden, 'nombre')
+    productos = productos.order_by(orden_db)
+
+    # 3. EXPORTACIoN A CSV 
     if request.GET.get('export') == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="inventario.csv"'
@@ -45,6 +59,7 @@ def productos_list(request):
 
         writer.writerow(['Código', 'Marca', 'Nombre', 'Categoría', 'Precio Costo', 'Precio Venta', 'Stock Total', 'Estado'])
 
+        # Fíjate que itera sobre "productos" (que ya está filtrado y ordenado por el código de arriba)
         for prod in productos:
             writer.writerow([
                 prod.codigo,
@@ -58,16 +73,23 @@ def productos_list(request):
             ])
         return response
 
-    # Paginacion
+    # 4. PAGINACION
     paginator = Paginator(productos, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
+    # CONTEXTO Y RENDER
     context = {
         'page_obj': page_obj,
         'max_permission': max_permission,
+        
+        # Le pasamos las variables nuevas al HTML para que la barra no se borre
+        'criterio_actual': criterio,
+        'q_actual': q,
+        'orden_actual': orden,
     }
     return render(request, 'inventario/productos_list.html', context)
+
 
 # --- CREAR PRODUCTO
 @login_required

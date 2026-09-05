@@ -19,7 +19,8 @@ from ventas.models import Venta
 # --- LISTAR CLIENTE
 @login_required
 def clientes_list(request):
-    # Validacion de Permisos
+
+    # VALIDACIÓN DE PERMISOS
     max_permission = UserRole.objects.filter(user_id=request.user).aggregate(
         max_permission=models.Max('role__clientes')
     )['max_permission'] or 0
@@ -28,38 +29,51 @@ def clientes_list(request):
         messages.error(request, 'No tienes acceso al módulo de Clientes.')
         return redirect('dashboard')
 
-    # Obtener clientes y aplicar Filtros adaptados a tu modelo
-    clientes_list = Cliente.objects.all().order_by('apellido')
 
-    nombre = request.GET.get('nombre')
-    documento = request.GET.get('documento')
-    provincia = request.GET.get('provincia')
+    # LÓGICA BASE Y BUSCADOR INTELIGENTE
+    clientes = Cliente.objects.all()
 
-    if nombre:
-        # Filtramos por nombre O apellido
-        clientes_list = clientes_list.filter(
-            models.Q(nombre__icontains=nombre) | models.Q(apellido__icontains=nombre)
-        )
-    if documento:
-        clientes_list = clientes_list.filter(numero_documento__icontains=documento)
-    if provincia:
-        clientes_list = clientes_list.filter(provincia__icontains=provincia)
+    criterio = request.GET.get('criterio', 'nombre')
+    q = request.GET.get('q', '').strip()
+    orden = request.GET.get('orden', 'az')
 
-    # Exportación a CSV
+    # Aplicar filtro inteligente
+    if q:
+        if criterio == 'nombre':
+            # Busca en nombre O apellido
+            clientes = clientes.filter(models.Q(nombre__icontains=q) | models.Q(apellido__icontains=q))
+        elif criterio == 'documento':
+            clientes = clientes.filter(numero_documento__icontains=q)
+        elif criterio == 'ubicacion':
+            # Busca en provincia O localidad
+            clientes = clientes.filter(models.Q(provincia__icontains=q) | models.Q(localidad__icontains=q))
+
+    # Aplicar ordenamiento
+    orden_opciones = {
+        'az': ['apellido', 'nombre'],      # Ordena por apellido, y si hay empate, por nombre
+        'za': ['-apellido', '-nombre'],
+        'recientes': ['-fecha_registro'],  # Los últimos que agregaste al sistema
+        'antiguos': ['fecha_registro'],
+    }
+    # Si pasa algo raro, por defecto ordena de la A a la Z
+    orden_db = orden_opciones.get(orden, ['apellido', 'nombre'])
+    clientes = clientes.order_by(*orden_db)
+
+
+    # EXPORTACIÓN A CSV
     if request.GET.get('export') == 'csv':
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="clientes.csv"'
-        response.write('\ufeff'.encode('utf-8')) # Soporte para acentos en Excel
+        response.write('\ufeff'.encode('utf-8'))
         writer = csv.writer(response)
 
-        # Encabezados
         writer.writerow([
             'Nombre', 'Apellido', 'Tipo Doc', 'Documento', 
             'Provincia', 'Localidad', 'Dirección', 'Barrio', 
             'CP', 'Teléfono', 'Email', 'Fecha Alta'
         ])
 
-        for cliente in clientes_list:
+        for cliente in clientes:
             writer.writerow([
                 cliente.nombre,
                 cliente.apellido,
@@ -76,17 +90,23 @@ def clientes_list(request):
             ])
         return response
 
-    # Paginacion
-    paginator = Paginator(clientes_list, 10) # 10 clientes por página
+    # PAGINACIÓN Y CONTEXTO
+    paginator = Paginator(clientes, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     context = {
         'page_obj': page_obj,
-        'max_permission': max_permission, # Util para ocultar botones de editar/borrar en el HTML
+        'max_permission': max_permission,
+        
+        # Devolvemos esto para que la barra de búsqueda se mantenga
+        'criterio_actual': criterio,
+        'q_actual': q,
+        'orden_actual': orden,
     }
 
     return render(request, 'clientes/clientes_list.html', context)
+
 
 # --- CREAR CLIENTE
 @login_required
@@ -161,31 +181,70 @@ def cliente_delete(request, pk):
     return redirect('clientes:clientes_list')
 
 # --- LOGICA DE MANEJO DE CUENTAS CORRIENTES
-# --- LISTAR CUENTAS CORRIENTES
-@login_required
 def cuenta_corriente_list(request):
-    # Total credito (siempre de los que deben)
-    total_credito = Cliente.objects.filter(saldo_cuenta_corriente__gt=0).aggregate(total=Sum('saldo_cuenta_corriente')) ['total'] or 0
+    # TARJETA DE RESUMEN
+    total_credito = Cliente.objects.filter(saldo_cuenta_corriente__gt=0).aggregate(
+        total=Sum('saldo_cuenta_corriente')
+    )['total'] or 0
 
-    clientes = Cliente.objects.all().order_by('apellido')
+    # LÓGICA BASE Y BUSCADOR INTELIGENTE
+    clientes = Cliente.objects.all()
 
-    # filtros del buscador
-    documento_q = request.GET.get('documento')
-    nombre_q = request.GET.get('nombre')
+    criterio = request.GET.get('criterio', 'nombre')
+    q = request.GET.get('q', '').strip()
+    orden = request.GET.get('orden', 'az')
 
-    if documento_q:
-        clientes = clientes.filter(numero_documento__icontains=documento_q)
-    if nombre_q:
-        clientes = clientes.filter(Q(nombre__icontains=nombre_q) | Q(apellido__icontains=nombre_q))
+    # Aplicar filtro inteligente
+    if q:
+        if criterio == 'nombre':
+            clientes = clientes.filter(Q(nombre__icontains=q) | Q(apellido__icontains=q))
+        elif criterio == 'documento':
+            clientes = clientes.filter(numero_documento__icontains=q)
 
-    # Paginacion (igual que en clientes)
-    paginator = Paginator(clientes, 15)
+    # Aplicar ordenamiento
+    orden_opciones = {
+        'az': ['apellido', 'nombre'],
+        'za': ['-apellido', '-nombre'],
+        'mayor_deuda': ['-saldo_cuenta_corriente'], # El signo menos ordena de mayor a menor
+        'menor_deuda': ['saldo_cuenta_corriente'],
+    }
+    orden_db = orden_opciones.get(orden, ['apellido', 'nombre'])
+    clientes = clientes.order_by(*orden_db)
+
+    # EXPORTACIÓN A CSV
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="cuentas_corrientes.csv"'
+        response.write('\ufeff'.encode('utf-8')) # Soporte para tildes y ñ en Excel
+        writer = csv.writer(response)
+
+        writer.writerow(['Documento', 'Apellido', 'Nombre', 'Teléfono', 'Email', 'Saldo Actual'])
+
+        for cliente in clientes:
+            writer.writerow([
+                cliente.numero_documento or '-',
+                cliente.apellido,
+                cliente.nombre or '',
+                cliente.telefono or 'N/A',
+                cliente.email or 'N/A',
+                cliente.saldo_cuenta_corriente,
+            ])
+        return response
+
+    # PAGINACIÓN Y CONTEXTO
+    paginator = Paginator(clientes, 15) # Mantengo tus 15 por página
     page_obj = paginator.get_page(request.GET.get('page'))
     
-    return render(request, 'clientes/cuenta_corriente_list.html', {
+    context = {
         'page_obj': page_obj,
-        'total_credito': total_credito
-    })
+        'total_credito': total_credito,
+        # Variables para mantener el estado del buscador
+        'criterio_actual': criterio,
+        'q_actual': q,
+        'orden_actual': orden,
+    }
+    
+    return render(request, 'clientes/cuenta_corriente_list.html', context)
 
 # --- DETALLE CUENTAS CORRIENTES
 @login_required

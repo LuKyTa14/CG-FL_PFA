@@ -40,7 +40,7 @@
             <div class="w-1/2 pr-4">
                 <h3 class="text-xs font-bold text-gray-500 uppercase mb-1">Datos del Proveedor</h3>
                 <p class="font-bold">{{ compra.proveedor.nombre }}</p>
-                <p class="text-sm">CUIT: {{ compra.proveedor.cuit|default:"No registrado" }}</p>
+                <p class="text-sm">{{ compra.proveedor.tipo_documento }}: {{ compra.proveedor.numero_documento|default:"No registrado" }}</p>
             </div>
             <div class="w-1/2 pl-4 border-l border-gray-200">
                 <h3 class="text-xs font-bold text-gray-500 uppercase mb-1">Destino de la Mercadería</h3>
